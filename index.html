@@ -1577,26 +1577,27 @@ async function loadMIS() {
   try {
     const sheetId = idMatch[1];
     const tabName = document.getElementById('mis-tab-select').value || 'New_Raw_Data';
+    misStatus('Loading ' + tabName + '...');
 
-    misStatus('Loading ' + tabName + ' via CSV export...');
+    // Use export as TSV - single fast request, works with Bearer token
+    const exportUrl = 'https://docs.google.com/spreadsheets/d/' + sheetId + '/export?format=tsv&id=' + sheetId + '&sheet=' + encodeURIComponent(tabName);
+    const res = await fetch(exportUrl, { headers: { Authorization: 'Bearer ' + token } });
 
-    const csvUrl = 'https://docs.google.com/spreadsheets/d/' + sheetId + '/gviz/tq?tqx=out:csv&sheet=' + encodeURIComponent(tabName);
-    const res = await fetch(csvUrl, { headers: { Authorization: 'Bearer ' + token } });
+    if (res.status === 401) { misStatus('Auth error — sign out and sign in again'); misLoading = false; return; }
+    if (!res.ok) throw new Error('HTTP ' + res.status);
 
-    if (!res.ok) {
-      if (res.status === 401) { misStatus('Auth error — please sign out and sign in again'); misLoading = false; return; }
-      throw new Error('HTTP ' + res.status);
-    }
+    misStatus('Parsing...');
+    const text = await res.text();
+    const lines = text.split(/
+?
+/).filter(l => l.trim());
+    if (lines.length < 2) { misStatus('No data found'); misLoading = false; return; }
 
-    misStatus('Parsing data...');
-    const csvText = await res.text();
-    const rows = parseCSV(csvText);
-    if (rows.length < 2) { misStatus('No data found'); misLoading = false; return; }
-
-    const headers = rows[0];
-    misRawData = rows.slice(1).map(row => {
+    const headers = lines[0].split('	');
+    misRawData = lines.slice(1).map(line => {
+      const cols = line.split('	');
       const o = {};
-      headers.forEach((h, i) => { o[h.trim()] = (row[i] || '').trim(); });
+      headers.forEach((h, i) => { o[h.trim()] = (cols[i] || '').trim(); });
       return o;
     });
 
@@ -1608,31 +1609,6 @@ async function loadMIS() {
     misLoading = false;
 
   } catch(e) { misStatus('Error: ' + e.message); misLoading = false; }
-}
-
-function parseCSV(text) {
-  const rows = [];
-  let row = [], field = '', inQuotes = false;
-  for (let i = 0; i < text.length; i++) {
-    const c = text[i];
-    if (c === '"') {
-      if (inQuotes && text[i+1] === '"') { field += '"'; i++; }
-      else inQuotes = !inQuotes;
-    } else if (c === ',' && !inQuotes) {
-      row.push(field); field = '';
-    } else if ((c === '
-' || c === '
-') && !inQuotes) {
-      if (c === '
-' && text[i+1] === '
-') i++;
-      row.push(field); field = '';
-      if (row.some(f => f !== '')) rows.push(row);
-      row = [];
-    } else { field += c; }
-  }
-  if (field || row.length) { row.push(field); if (row.some(f => f !== '')) rows.push(row); }
-  return rows;
 }
 
 
