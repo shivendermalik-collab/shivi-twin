@@ -1588,9 +1588,7 @@ async function loadMIS() {
 
     misStatus('Parsing...');
     const text = await res.text();
-    const lines = text.split(/
-?
-/).filter(l => l.trim());
+    const lines = text.split('\n').map(l => l.replace('\r','')).filter(l => l.trim());
     if (lines.length < 2) { misStatus('No data found'); misLoading = false; return; }
 
     const headers = lines[0].split('	');
