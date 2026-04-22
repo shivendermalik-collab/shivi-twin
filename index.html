@@ -936,7 +936,7 @@ REASON: ≤8 words, specific.
 Emails (INDEX|ID|FROM|SUBJECT):
 ${list}
 
-Output ONLY the lines. No preamble.`);
+Output ONLY the lines. No preamble.`, 4000);
 
   showProgress(70);
   triage = {};
@@ -946,8 +946,14 @@ Output ONLY the lines. No preamble.`);
       const id = p[1]?.trim();
       const priority = p[2]?.trim();
       const reason = p.slice(3).join('|').trim();
-      if (id && priority) triage[id] = { priority, reason };
+      const validPriorities = ['MUST_READ', 'DCF', 'SKIM', 'IGNORE'];
+      if (id && validPriorities.includes(priority)) triage[id] = { priority, reason };
     }
+  });
+
+  // Default any unmatched emails to SKIM so all 50 always show
+  emails.forEach(e => {
+    if (!triage[e.id]) triage[e.id] = { priority: 'SKIM', reason: 'Not analyzed' };
   });
 
   updateCounts(); renderList();
@@ -1236,12 +1242,12 @@ function updateCounts() {
 }
 
 // ── HELPERS ──────────────────────────────────────────────
-async function claude(prompt) {
+async function claude(prompt, maxTokens = 1000) {
   try {
     const r = await fetch('https://frosty-bush-03e9.mshivenderk-710.workers.dev', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, messages: [{ role: 'user', content: prompt }] })
+      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: maxTokens, messages: [{ role: 'user', content: prompt }] })
     });
     const d = await r.json(); return d.content?.[0]?.text || 'No response';
   } catch(e) { return 'Error connecting to Claude'; }
