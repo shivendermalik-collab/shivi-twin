@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DCF MIS — Loans24</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --purple: #3D3DAA;
+  --purple-dark: #2B2B88;
+  --purple-light: #EEEEF9;
+  --orange: #FF5100;
+  --orange-light: #FFF0EB;
+  --green: #1A9E5F;
+  --green-bg: #E8F7F0;
+  --red: #E53935;
+  --red-bg: #FFEBEE;
+  --black: #111111;
+  --grey-800: #333333;
+  --grey-600: #555555;
+  --grey-400: #999999;
+  --grey-200: #E0E0E0;
+  --grey-100: #F5F5F5;
+  --grey-50: #FAFAFA;
+  --white: #FFFFFF;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Montserrat', sans-serif; background: var(--grey-100); color: var(--black); }
+
+/* ── HEADER ── */
+.header {
+  background: linear-gradient(135deg, var(--purple) 0%, var(--purple-dark) 100%);
+  padding: 20px 32px;
+  display: flex; align-items: center; gap: 16px;
+}
+.header-logo { display: flex; align-items: center; gap: 10px; }
+.logo-pill { background: var(--orange); color: var(--white); font-weight: 800; font-size: 12px; padding: 4px 12px; border-radius: 20px; }
+.logo-sub { color: rgba(255,255,255,0.7); font-size: 12px; font-weight: 500; }
+.header-title { color: var(--white); font-size: 18px; font-weight: 800; letter-spacing: -0.3px; margin-left: 8px; }
+.header-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+.header-meta { color: rgba(255,255,255,0.6); font-size: 11px; font-weight: 500; }
+.btn-connect {
+  background: var(--orange); color: var(--white);
+  border: none; border-radius: 8px; padding: 8px 18px;
+  font-family: 'Montserrat', sans-serif; font-size: 12px; font-weight: 700;
+  cursor: pointer; transition: all 0.2s;
+}
+.btn-connect:hover { background: #e04800; }
+.btn-secondary {
+  background: rgba(255,255,255,0.12); color: var(--white);
+  border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; padding: 8px 16px;
+  font-family: 'Montserrat', sans-serif; font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: all 0.2s;
+}
+.btn-secondary:hover { background: rgba(255,255,255,0.2); }
+
+/* ── CONNECT BANNER ── */
+#connect-banner {
+  background: var(--white); border-bottom: 1px solid var(--grey-200);
+  padding: 20px 32px; display: flex; align-items: center; gap: 16px;
+}
+.connect-icon { font-size: 28px; }
+.connect-text h3 { font-size: 14px; font-weight: 700; color: var(--black); margin-bottom: 4px; }
+.connect-text p { font-size: 12px; color: var(--grey-400); font-weight: 500; }
+.sheet-input {
+  flex: 1; max-width: 480px;
+  border: 1px solid var(--grey-200); border-radius: 8px;
+  padding: 10px 14px; font-family: 'Montserrat', sans-serif; font-size: 12px;
+  outline: none; transition: border-color 0.2s;
+}
+.sheet-input:focus { border-color: var(--purple); }
+
+/* ── STATUS BAR ── */
+#status-bar {
+  background: var(--purple-light); border-bottom: 1px solid rgba(61,61,170,0.1);
+  padding: 10px 32px; font-size: 11px; font-weight: 600; color: var(--purple);
+  display: none; align-items: center; gap: 8px;
+}
+.spinner { width: 12px; height: 12px; border: 2px solid rgba(61,61,170,0.2); border-top-color: var(--purple); border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── FILTERS ── */
+#filters-bar {
+  background: var(--white); border-bottom: 1px solid var(--grey-200);
+  padding: 12px 32px; display: none; align-items: center; gap: 12px; flex-wrap: wrap;
+}
+.filter-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; color: var(--grey-400); }
+.filter-group { display: flex; gap: 6px; }
+.filter-btn {
+  border: 1px solid var(--grey-200); background: var(--white);
+  border-radius: 20px; padding: 5px 12px; font-size: 11px; font-weight: 600;
+  cursor: pointer; font-family: 'Montserrat', sans-serif; color: var(--grey-600);
+  transition: all 0.15s;
+}
+.filter-btn:hover { border-color: var(--purple); color: var(--purple); }
+.filter-btn.active { background: var(--purple); border-color: var(--purple); color: var(--white); }
+.filter-divider { width: 1px; height: 24px; background: var(--grey-200); }
+
+/* ── MAIN CONTENT ── */
+.content { padding: 24px 32px; }
+
+/* ── KPI STRIP ── */
+.kpi-strip { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 20px; }
+.kpi-card {
+  background: var(--white); border: 1px solid var(--grey-200);
+  border-radius: 14px; padding: 16px 14px; box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  position: relative; overflow: hidden;
+}
+.kpi-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+.kpi-card.orange::before { background: var(--orange); }
+.kpi-card.purple::before { background: var(--purple); }
+.kpi-card.green::before { background: var(--green); }
+.kpi-card.red::before { background: var(--red); }
+.kpi-card.blue::before { background: #1976D2; }
+.kpi-card.teal::before { background: #00796B; }
+
+.kpi-num { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 3px; }
+.kpi-card.orange .kpi-num { color: var(--orange); }
+.kpi-card.purple .kpi-num { color: var(--purple); }
+.kpi-card.green .kpi-num { color: var(--green); }
+.kpi-card.red .kpi-num { color: var(--red); }
+.kpi-card.blue .kpi-num { color: #1976D2; }
+.kpi-card.teal .kpi-num { color: #00796B; }
+.kpi-label { font-size: 8.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; color: var(--grey-400); }
+.kpi-sub { font-size: 10px; font-weight: 600; color: var(--grey-400); margin-top: 4px; }
+
+/* ── GRID ── */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.grid-full { margin-bottom: 16px; }
+
+/* ── SECTION CARD ── */
+.card {
+  background: var(--white); border: 1px solid var(--grey-200);
+  border-radius: 14px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); overflow: hidden;
+}
+.card-header {
+  padding: 14px 18px; border-bottom: 1px solid var(--grey-200);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.card-title { font-size: 12px; font-weight: 700; color: var(--black); }
+.card-badge { font-size: 9px; font-weight: 700; padding: 3px 8px; border-radius: 10px; }
+.badge-purple { background: var(--purple-light); color: var(--purple); }
+.badge-orange { background: var(--orange-light); color: var(--orange); }
+.badge-green { background: var(--green-bg); color: var(--green); }
+.card-body { padding: 16px 18px; }
+
+/* ── FUNNEL ── */
+.funnel { display: flex; gap: 0; }
+.funnel-step {
+  flex: 1; text-align: center; padding: 16px 8px;
+  border-right: 1px solid var(--grey-200); position: relative;
+}
+.funnel-step:last-child { border-right: none; }
+.funnel-num { font-size: 22px; font-weight: 800; color: var(--purple); margin-bottom: 4px; }
+.funnel-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--grey-400); margin-bottom: 6px; }
+.funnel-rate { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 10px; }
+.funnel-arrow { position: absolute; right: -8px; top: 50%; transform: translateY(-50%); z-index: 1; font-size: 12px; color: var(--grey-400); }
+
+/* ── BAR CHART ── */
+.bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.bar-row:last-child { margin-bottom: 0; }
+.bar-label { font-size: 11px; font-weight: 600; color: var(--grey-800); width: 120px; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bar-track { flex: 1; height: 6px; background: var(--grey-100); border-radius: 3px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 3px; transition: width 0.8s ease; }
+.bar-val { font-size: 11px; font-weight: 700; color: var(--grey-800); width: 60px; text-align: right; flex-shrink: 0; }
+
+/* ── TABLE ── */
+.mis-table { width: 100%; border-collapse: collapse; }
+.mis-table th { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--grey-400); padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--grey-200); background: var(--grey-50); }
+.mis-table td { font-size: 12px; font-weight: 500; color: var(--grey-600); padding: 10px 12px; border-bottom: 1px solid var(--grey-100); }
+.mis-table tr:last-child td { border-bottom: none; }
+.mis-table tr:hover td { background: var(--grey-50); }
+.mis-table .num { font-weight: 700; color: var(--black); }
+.mis-table .highlight { background: var(--purple-light); }
+.mis-table .highlight td { color: var(--purple); font-weight: 700; }
+
+/* ── CHIP ── */
+.chip { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 6px; }
+.chip-green { background: var(--green-bg); color: var(--green); }
+.chip-orange { background: var(--orange-light); color: var(--orange); }
+.chip-purple { background: var(--purple-light); color: var(--purple); }
+.chip-red { background: var(--red-bg); color: var(--red); }
+.chip-grey { background: var(--grey-100); color: var(--grey-600); }
+
+/* ── EMPTY STATE ── */
+#empty-state {
+  text-align: center; padding: 80px 20px;
+}
+.empty-icon { font-size: 48px; margin-bottom: 16px; }
+.empty-title { font-size: 18px; font-weight: 800; color: var(--black); margin-bottom: 8px; }
+.empty-sub { font-size: 13px; color: var(--grey-400); font-weight: 500; max-width: 400px; margin: 0 auto; line-height: 1.6; }
+
+/* ── LOADING OVERLAY ── */
+#loading-overlay {
+  display: none; text-align: center; padding: 80px 20px;
+}
+.loading-spinner { width: 40px; height: 40px; border: 3px solid var(--grey-200); border-top-color: var(--purple); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
+.loading-text { font-size: 14px; font-weight: 600; color: var(--grey-400); }
+
+/* ── FOOTER ── */
+.footer {
+  background: var(--grey-50); border-top: 1px solid var(--grey-200);
+  padding: 14px 32px; display: flex; align-items: center; gap: 8px;
+  font-size: 11px; color: var(--grey-400); font-weight: 500;
+}
+.footer-logo { display: flex; align-items: center; gap: 6px; }
+.footer-cars24 { background: var(--orange); color: var(--white); font-weight: 800; font-size: 10px; padding: 2px 8px; border-radius: 10px; }
+.footer-loans24 { color: var(--purple); font-weight: 700; font-size: 11px; }
+
+@media (max-width: 1024px) {
+  .kpi-strip { grid-template-columns: repeat(3, 1fr); }
+  .grid-3 { grid-template-columns: 1fr; }
+  .grid-2 { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-logo">
+    <span class="logo-pill">CARS24</span>
+    <span class="logo-sub">Loans24 · DCF</span>
+  </div>
+  <div class="header-title">DCF MIS Dashboard</div>
+  <div class="header-right">
+    <span class="header-meta" id="last-updated"></span>
+    <button class="btn-secondary" onclick="refreshData()" id="refresh-btn" style="display:none">↻ Refresh</button>
+    <button class="btn-connect" onclick="connectSheet()" id="connect-btn">Connect Sheet</button>
+  </div>
+</div>
+
+<!-- CONNECT BANNER -->
+<div id="connect-banner">
+  <div class="connect-icon">📊</div>
+  <div class="connect-text">
+    <h3>Connect your DCF Google Sheet</h3>
+    <p>Paste the sheet URL — dashboard auto-builds from your live data</p>
+  </div>
+  <input class="sheet-input" id="sheet-url-input" 
+    placeholder="https://docs.google.com/spreadsheets/d/..." 
+    value="https://docs.google.com/spreadsheets/d/17Uktk9crbcF-rps1SSVfAQmwkRb3Vhl1t717IQvw8qI/edit?gid=2122627395#gid=2122627395">
+  <button class="btn-connect" onclick="connectSheet()">Load Dashboard</button>
+</div>
+
+<!-- STATUS BAR -->
+<div id="status-bar">
+  <div class="spinner"></div>
+  <span id="status-text">Loading data...</span>
+</div>
+
+<!-- FILTERS -->
+<div id="filters-bar">
+  <span class="filter-label">Month</span>
+  <div class="filter-group" id="month-filters"></div>
+  <div class="filter-divider"></div>
+  <span class="filter-label">Region</span>
+  <div class="filter-group" id="region-filters"></div>
+  <div class="filter-divider"></div>
+  <span class="filter-label">Channel</span>
+  <div class="filter-group" id="channel-filters"></div>
+</div>
+
+<!-- MAIN -->
+<div class="content">
+
+  <!-- Empty state -->
+  <div id="empty-state">
+    <div class="empty-icon">📊</div>
+    <div class="empty-title">DCF MIS Dashboard</div>
+    <div class="empty-sub">Connect your Google Sheet above to build a live DCF dashboard with funnel metrics, GMV, channel mix, and AI insights.</div>
+  </div>
+
+  <!-- Loading -->
+  <div id="loading-overlay">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">Building your DCF MIS...</div>
+  </div>
+
+  <!-- Dashboard -->
+  <div id="dashboard" style="display:none">
+
+    <!-- KPI Strip -->
+    <div class="kpi-strip" id="kpi-strip"></div>
+
+    <!-- Row 1: Funnel + Monthly trend -->
+    <div class="grid-full">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Loan Origination Funnel</div>
+          <span class="card-badge badge-purple" id="funnel-period">All time</span>
+        </div>
+        <div class="funnel" id="funnel"></div>
+      </div>
+    </div>
+
+    <!-- Row 2: Channel mix + Region -->
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Channel Mix — Disbursals</div>
+          <span class="card-badge badge-orange" id="channel-total"></span>
+        </div>
+        <div class="card-body" id="channel-chart"></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Region Split</div>
+          <span class="card-badge badge-green" id="region-total"></span>
+        </div>
+        <div class="card-body" id="region-chart"></div>
+      </div>
+    </div>
+
+    <!-- Row 3: DS Channel + Risk Bucket + NBFC -->
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Green / Amber / Red</div>
+        </div>
+        <div class="card-body" id="ds-channel-chart"></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Risk Bucket</div>
+        </div>
+        <div class="card-body" id="risk-chart"></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Book Type</div>
+        </div>
+        <div class="card-body" id="book-chart"></div>
+      </div>
+    </div>
+
+    <!-- Row 4: Monthly table -->
+    <div class="grid-full">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Month-wise Performance</div>
+          <span class="card-badge badge-purple">GMV in ₹ Cr</span>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="mis-table" id="monthly-table"></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 5: Raw data table -->
+    <div class="grid-full">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Case-level Data</div>
+          <span class="card-badge badge-grey" id="case-count" style="background:var(--grey-100);color:var(--grey-600)"></span>
+        </div>
+        <div style="overflow-x:auto;max-height:400px;overflow-y:auto">
+          <table class="mis-table" id="case-table"></table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <div class="footer-logo">
+    <span class="footer-cars24">CARS24</span>
+    <span class="footer-loans24">Loans24</span>
+  </div>
+  <span>·</span>
+  <span>DCF MIS Dashboard</span>
+  <span style="margin-left:auto" id="footer-meta"></span>
+</div>
+
+<script>
+// ── CONFIG ──────────────────────────────────────────────
+const CLIENT_ID = '322751089633-u99meo5em7lnco8blpl5dtgosiarcmkf.apps.googleusercontent.com';
+const SCOPES = 'https://www.googleapis.com/auth/spreadsheets.readonly https://www.googleapis.com/auth/userinfo.email';
+
+let token = null;
+let rawData = [];
+let filteredData = [];
+let activeFilters = { month: 'All', region: 'All', channel: 'All' };
+
+// ── AUTH ────────────────────────────────────────────────
+function checkAuth() {
+  const hash = window.location.hash.substring(1);
+  const params = new URLSearchParams(hash);
+  const t = params.get('access_token');
+  if (t) { token = t; sessionStorage.setItem('dcf_token', t); history.replaceState(null, '', location.pathname); return true; }
+  const stored = sessionStorage.getItem('dcf_token');
+  if (stored) { token = stored; return true; }
+  return false;
+}
+
+function startAuth(afterAuth) {
+  sessionStorage.setItem('dcf_after_auth', afterAuth || '');
+  const redirect = window.location.href.split('?')[0].split('#')[0];
+  window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${new URLSearchParams({
+    client_id: CLIENT_ID, redirect_uri: redirect,
+    response_type: 'token', scope: SCOPES, prompt: 'consent'
+  })}`;
+}
+
+// ── CONNECT SHEET ────────────────────────────────────────
+async function connectSheet() {
+  const url = document.getElementById('sheet-url-input').value.trim();
+  if (!url) { alert('Please paste your Google Sheet URL'); return; }
+
+  // Extract sheet ID and GID
+  const idMatch = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+  const gidMatch = url.match(/gid=(\d+)/);
+  if (!idMatch) { alert('Invalid Google Sheets URL'); return; }
+
+  const sheetId = idMatch[1];
+  const gid = gidMatch ? gidMatch[1] : '0';
+
+  if (!checkAuth()) { startAuth(url); return; }
+
+  showLoading();
+  await loadSheetData(sheetId, gid);
+}
+
+async function loadSheetData(sheetId, gid) {
+  try {
+    showStatus('Fetching sheet data...');
+
+    // Get sheet metadata first to find tab name
+    const metaRes = await fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}?fields=sheets.properties`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    const meta = await metaRes.json();
+    
+    // Find sheet by gid
+    let tabName = 'Sheet1';
+    if (meta.sheets) {
+      const sheet = meta.sheets.find(s => s.properties.sheetId == gid);
+      if (sheet) tabName = sheet.properties.title;
+    }
+
+    showStatus(`Reading ${tabName}...`);
+
+    // Fetch sheet values
+    const dataRes = await fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${encodeURIComponent(tabName)}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    const data = await dataRes.json();
+
+    if (!data.values || data.values.length < 2) {
+      showStatus('No data found in sheet');
+      return;
+    }
+
+    // Parse into objects
+    const headers = data.values[0];
+    rawData = data.values.slice(1).map(row => {
+      const obj = {};
+      headers.forEach((h, i) => { obj[h] = row[i] || ''; });
+      return obj;
+    });
+
+    document.getElementById('connect-banner').style.display = 'none';
+    document.getElementById('connect-btn').style.display = 'none';
+    document.getElementById('refresh-btn').style.display = 'block';
+    document.getElementById('last-updated').textContent = `Updated ${new Date().toLocaleTimeString()}`;
+    document.getElementById('footer-meta').textContent = `${rawData.length.toLocaleString()} rows · ${tabName}`;
+
+    buildFilters();
+    applyFiltersAndRender();
+    hideLoading();
+    hideStatus();
+
+  } catch(e) {
+    if (e.message?.includes('401') || e.message?.includes('auth')) {
+      token = null; sessionStorage.removeItem('dcf_token');
+      startAuth(document.getElementById('sheet-url-input').value);
+    } else {
+      showStatus('Error loading sheet: ' + e.message);
+      hideLoading();
+    }
+  }
+}
+
+// ── FILTERS ─────────────────────────────────────────────
+function buildFilters() {
+  // Months
+  const months = [...new Set(rawData.map(r => r['DISBURSAL_MONTH']).filter(Boolean))].sort().reverse();
+  const monthDiv = document.getElementById('month-filters');
+  monthDiv.innerHTML = filterBtn('All', 'month', true);
+  months.forEach(m => { monthDiv.innerHTML += filterBtn(m, 'month'); });
+
+  // Regions
+  const regions = [...new Set(rawData.map(r => r['REGION']).filter(Boolean))].sort();
+  const regionDiv = document.getElementById('region-filters');
+  regionDiv.innerHTML = filterBtn('All', 'region', true);
+  regions.forEach(r => { regionDiv.innerHTML += filterBtn(r, 'region'); });
+
+  // Channels
+  const channels = [...new Set(rawData.map(r => r['Channel Revised']).filter(Boolean))].sort();
+  const channelDiv = document.getElementById('channel-filters');
+  channelDiv.innerHTML = filterBtn('All', 'channel', true);
+  channels.slice(0, 6).forEach(c => { channelDiv.innerHTML += filterBtn(c, 'channel'); });
+
+  document.getElementById('filters-bar').style.display = 'flex';
+}
+
+function filterBtn(label, type, active = false) {
+  return `<button class="filter-btn ${active ? 'active' : ''}" onclick="setFilter('${type}', '${label}', this)">${label}</button>`;
+}
+
+function setFilter(type, value, el) {
+  activeFilters[type] = value;
+  el.closest('.filter-group').querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  applyFiltersAndRender();
+}
+
+function applyFiltersAndRender() {
+  filteredData = rawData.filter(r => {
+    if (activeFilters.month !== 'All' && r['DISBURSAL_MONTH'] !== activeFilters.month) return false;
+    if (activeFilters.region !== 'All' && r['REGION'] !== activeFilters.region) return false;
+    if (activeFilters.channel !== 'All' && r['Channel Revised'] !== activeFilters.channel) return false;
+    return true;
+  });
+  renderDashboard();
+}
+
+// ── RENDER ──────────────────────────────────────────────
+function renderDashboard() {
+  const disbursed = filteredData.filter(r => r['DISBURSAL_DATE'] && r['DISBURSAL_DATE'] !== '');
+  const logins = filteredData.filter(r => r['LOGIN_DATE'] && r['LOGIN_DATE'] !== '');
+  const approvals = filteredData.filter(r => r['APPROVAL_DATE'] && r['APPROVAL_DATE'] !== '');
+  const gmv = disbursed.reduce((s, r) => s + (parseFloat(r['LOAN_SANCTION']) || 0), 0);
+  const avgTicket = disbursed.length ? gmv / disbursed.length / 1000 : 0;
+  const l2d = logins.length ? (disbursed.length / logins.length * 100).toFixed(1) : 0;
+
+  // KPIs
+  document.getElementById('kpi-strip').innerHTML = `
+    <div class="kpi-card orange">
+      <div class="kpi-num">${disbursed.length.toLocaleString()}</div>
+      <div class="kpi-label">Disbursals</div>
+      <div class="kpi-sub">cases</div>
+    </div>
+    <div class="kpi-card purple">
+      <div class="kpi-num">₹${(gmv/1e7).toFixed(1)}Cr</div>
+      <div class="kpi-label">GMV</div>
+      <div class="kpi-sub">loan sanctions</div>
+    </div>
+    <div class="kpi-card green">
+      <div class="kpi-num">${l2d}%</div>
+      <div class="kpi-label">L2D%</div>
+      <div class="kpi-sub">login to disbursal</div>
+    </div>
+    <div class="kpi-card blue">
+      <div class="kpi-num">${logins.length.toLocaleString()}</div>
+      <div class="kpi-label">Logins</div>
+      <div class="kpi-sub">cases</div>
+    </div>
+    <div class="kpi-card teal">
+      <div class="kpi-num">${approvals.length.toLocaleString()}</div>
+      <div class="kpi-label">Approvals</div>
+      <div class="kpi-sub">cases</div>
+    </div>
+    <div class="kpi-card red">
+      <div class="kpi-num">₹${avgTicket.toFixed(0)}K</div>
+      <div class="kpi-label">Avg Ticket</div>
+      <div class="kpi-sub">per disbursal</div>
+    </div>`;
+
+  // Funnel
+  const l2a = logins.length ? (approvals.length / logins.length * 100).toFixed(1) : 0;
+  const a2d = approvals.length ? (disbursed.length / approvals.length * 100).toFixed(1) : 0;
+  document.getElementById('funnel').innerHTML = `
+    <div class="funnel-step">
+      <div class="funnel-label">Leads</div>
+      <div class="funnel-num">${filteredData.length.toLocaleString()}</div>
+      <div class="funnel-rate chip chip-grey">100%</div>
+    </div>
+    <div class="funnel-step">
+      <div class="funnel-label">Logins</div>
+      <div class="funnel-num">${logins.length.toLocaleString()}</div>
+      <div class="funnel-rate chip chip-purple">${(logins.length/filteredData.length*100).toFixed(1)}%</div>
+    </div>
+    <div class="funnel-step">
+      <div class="funnel-label">Approvals</div>
+      <div class="funnel-num">${approvals.length.toLocaleString()}</div>
+      <div class="funnel-rate chip chip-orange">${l2a}% L2A</div>
+    </div>
+    <div class="funnel-step">
+      <div class="funnel-label">Disbursals</div>
+      <div class="funnel-num">${disbursed.length.toLocaleString()}</div>
+      <div class="funnel-rate chip chip-green">${l2d}% L2D</div>
+    </div>
+    <div class="funnel-step">
+      <div class="funnel-label">A2D%</div>
+      <div class="funnel-num" style="font-size:18px">${a2d}%</div>
+      <div class="funnel-rate chip chip-orange">approval to disbursal</div>
+    </div>`;
+
+  // Channel chart
+  const channelMap = groupBy(disbursed, 'Channel Revised');
+  const maxCh = Math.max(...Object.values(channelMap).map(v => v.length));
+  document.getElementById('channel-total').textContent = `${disbursed.length} cases`;
+  document.getElementById('channel-chart').innerHTML = Object.entries(channelMap)
+    .sort((a,b) => b[1].length - a[1].length).slice(0, 8)
+    .map(([k, v]) => barRow(k, v.length, maxCh, var_color('purple'), `${(v.reduce((s,r)=>s+(parseFloat(r['LOAN_SANCTION'])||0),0)/1e7).toFixed(1)}Cr`))
+    .join('');
+
+  // Region chart
+  const regionMap = groupBy(disbursed, 'REGION');
+  const maxReg = Math.max(...Object.values(regionMap).map(v => v.length));
+  document.getElementById('region-total').textContent = `${disbursed.length} cases`;
+  document.getElementById('region-chart').innerHTML = Object.entries(regionMap)
+    .sort((a,b) => b[1].length - a[1].length)
+    .map(([k, v]) => barRow(k, v.length, maxReg, var_color('green'), `${(v.length/disbursed.length*100).toFixed(0)}%`))
+    .join('');
+
+  // DS Channel (Green/Amber/Red)
+  const dsMap = groupBy(disbursed, 'DS_CHANNEL_');
+  const dsTotal = disbursed.length;
+  const dsLabels = {
+    'GreenChannelQualified-Cars24_BL': 'Green (BL)',
+    'GreenChannelQualified-Cars24': 'Green (Q)',
+    'AmberChannel': 'Amber',
+    'RedChannel': 'Red',
+    'na': 'NA'
+  };
+  const dsColors = {
+    'GreenChannelQualified-Cars24_BL': '#1A9E5F',
+    'GreenChannelQualified-Cars24': '#1A9E5F',
+    'AmberChannel': '#F9A825',
+    'RedChannel': '#E53935',
+    'na': '#999999'
+  };
+  const maxDs = Math.max(...Object.values(dsMap).map(v => v.length));
+  document.getElementById('ds-channel-chart').innerHTML = Object.entries(dsMap)
+    .sort((a,b) => b[1].length - a[1].length)
+    .map(([k, v]) => barRow(dsLabels[k]||k, v.length, maxDs, dsColors[k]||'#999', `${(v.length/dsTotal*100).toFixed(0)}%`))
+    .join('');
+
+  // Risk bucket
+  const rbMap = groupBy(disbursed.filter(r => r['RISK_BUCKET'] && r['RISK_BUCKET'] !== 'na'), 'RISK_BUCKET');
+  const maxRb = Math.max(...Object.values(rbMap).map(v => v.length));
+  const rbColors = { A: '#1A9E5F', B: '#43A047', C: '#F9A825', D: '#FF5100', E: '#E53935' };
+  document.getElementById('risk-chart').innerHTML = ['A','B','C','D','E']
+    .filter(k => rbMap[k])
+    .map(k => barRow(`Risk ${k}`, rbMap[k].length, maxRb, rbColors[k], `${(rbMap[k].length/disbursed.length*100).toFixed(0)}%`))
+    .join('');
+
+  // Book type
+  const bookLabels = { 'NBFC': 'Own Book (NBFC)', 'C2b Dealer': 'C2B Dealer', 'KUWY': 'KUWY', 'C2b Growth': 'C2B Growth' };
+  const nbfcMap = groupBy(disbursed, 'NBFC Channel');
+  const maxBook = Math.max(...Object.values(nbfcMap).map(v => v.length));
+  document.getElementById('book-chart').innerHTML = Object.entries(nbfcMap)
+    .sort((a,b) => b[1].length - a[1].length).slice(0,6)
+    .map(([k, v]) => barRow(bookLabels[k]||k, v.length, maxBook, var_color('purple'), `₹${(v.reduce((s,r)=>s+(parseFloat(r['LOAN_SANCTION'])||0),0)/1e7).toFixed(1)}Cr`))
+    .join('');
+
+  // Monthly table
+  const monthlyGroups = groupBy(disbursed, 'DISBURSAL_MONTH');
+  const allMonths = Object.keys(monthlyGroups).sort().reverse();
+  document.getElementById('monthly-table').innerHTML = `
+    <thead><tr>
+      <th>Month</th><th>Disbursals</th><th>GMV (₹Cr)</th><th>Avg Ticket</th><th>L2D%</th><th>Green%</th><th>Amber%</th>
+    </tr></thead>
+    <tbody>${allMonths.map(m => {
+      const mRows = monthlyGroups[m];
+      const mLogins = filteredData.filter(r => r['LOGIN_DATE'] && r['DISBURSAL_MONTH'] === m);
+      const mGmv = mRows.reduce((s,r) => s+(parseFloat(r['LOAN_SANCTION'])||0), 0);
+      const mTicket = mRows.length ? mGmv/mRows.length/1000 : 0;
+      const mL2d = mLogins.length ? (mRows.length/mLogins.length*100).toFixed(1) : '-';
+      const mGreen = mRows.filter(r => r['DS_CHANNEL_']?.includes('Green')).length;
+      const mAmber = mRows.filter(r => r['DS_CHANNEL_'] === 'AmberChannel').length;
+      const greenPct = mRows.length ? (mGreen/mRows.length*100).toFixed(0) : 0;
+      const amberPct = mRows.length ? (mAmber/mRows.length*100).toFixed(0) : 0;
+      return `<tr>
+        <td><strong>${m}</strong></td>
+        <td class="num">${mRows.length.toLocaleString()}</td>
+        <td class="num">₹${(mGmv/1e7).toFixed(1)}</td>
+        <td>₹${mTicket.toFixed(0)}K</td>
+        <td><span class="chip ${parseFloat(mL2d)>40?'chip-green':'chip-orange'}">${mL2d}%</span></td>
+        <td><span class="chip chip-green">${greenPct}%</span></td>
+        <td><span class="chip chip-orange">${amberPct}%</span></td>
+      </tr>`;
+    }).join('')}</tbody>`;
+
+  // Case table (latest 100 disbursals)
+  const latestCases = disbursed.slice(0, 100);
+  document.getElementById('case-count').textContent = `${disbursed.length} cases · showing 100`;
+  document.getElementById('case-table').innerHTML = `
+    <thead><tr>
+      <th>Lead ID</th><th>Dealer</th><th>Channel</th><th>Region</th><th>Risk</th><th>DS Channel</th><th>Ticket (₹L)</th><th>Disbursal Date</th>
+    </tr></thead>
+    <tbody>${latestCases.map(r => `<tr>
+      <td style="font-size:10px;color:var(--grey-400)">${r['LEAD_ID']||'-'}</td>
+      <td>${(r['DEALER_NAME']||'-').substring(0,20)}</td>
+      <td><span class="chip chip-purple">${r['Channel Revised']||'-'}</span></td>
+      <td>${r['REGION']||'-'}</td>
+      <td><span class="chip ${rbChipColor(r['RISK_BUCKET'])}">${r['RISK_BUCKET']||'-'}</span></td>
+      <td><span class="chip ${dsChipColor(r['DS_CHANNEL_'])}">${dsShort(r['DS_CHANNEL_'])}</span></td>
+      <td class="num">${r['LOAN_SANCTION'] ? (parseFloat(r['LOAN_SANCTION'])/100000).toFixed(1) : '-'}</td>
+      <td style="font-size:11px">${r['DISBURSAL_DATE']?.substring(0,10)||'-'}</td>
+    </tr>`).join('')}</tbody>`;
+
+  document.getElementById('dashboard').style.display = 'block';
+  document.getElementById('empty-state').style.display = 'none';
+}
+
+// ── HELPERS ──────────────────────────────────────────────
+function groupBy(arr, key) {
+  return arr.reduce((acc, row) => {
+    const k = row[key] || 'Unknown';
+    acc[k] = acc[k] || [];
+    acc[k].push(row);
+    return acc;
+  }, {});
+}
+
+function barRow(label, val, max, color, suffix) {
+  const pct = max ? (val / max * 100) : 0;
+  return `<div class="bar-row">
+    <div class="bar-label" title="${label}">${label}</div>
+    <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${color}"></div></div>
+    <div class="bar-val">${val.toLocaleString()} <span style="color:var(--grey-400);font-size:10px">${suffix}</span></div>
+  </div>`;
+}
+
+function var_color(name) {
+  const map = { purple: '#3D3DAA', orange: '#FF5100', green: '#1A9E5F' };
+  return map[name] || '#3D3DAA';
+}
+
+function rbChipColor(rb) {
+  const m = { A: 'chip-green', B: 'chip-green', C: 'chip-orange', D: 'chip-orange', E: 'chip-red', na: 'chip-grey' };
+  return m[rb] || 'chip-grey';
+}
+
+function dsChipColor(ds) {
+  if (!ds) return 'chip-grey';
+  if (ds.includes('Green')) return 'chip-green';
+  if (ds === 'AmberChannel') return 'chip-orange';
+  if (ds === 'RedChannel') return 'chip-red';
+  return 'chip-grey';
+}
+
+function dsShort(ds) {
+  if (!ds || ds === 'na') return 'NA';
+  if (ds.includes('Green')) return 'Green';
+  if (ds === 'AmberChannel') return 'Amber';
+  if (ds === 'RedChannel') return 'Red';
+  return ds;
+}
+
+function showLoading() {
+  document.getElementById('loading-overlay').style.display = 'block';
+  document.getElementById('empty-state').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'none';
+}
+
+function hideLoading() {
+  document.getElementById('loading-overlay').style.display = 'none';
+}
+
+function showStatus(msg) {
+  document.getElementById('status-bar').style.display = 'flex';
+  document.getElementById('status-text').textContent = msg;
+}
+
+function hideStatus() {
+  document.getElementById('status-bar').style.display = 'none';
+}
+
+async function refreshData() {
+  const url = document.getElementById('sheet-url-input').value.trim();
+  if (!url) return;
+  const idMatch = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+  const gidMatch = url.match(/gid=(\d+)/);
+  if (!idMatch) return;
+  rawData = [];
+  showLoading();
+  await loadSheetData(idMatch[1], gidMatch ? gidMatch[1] : '0');
+}
+
+// ── INIT ────────────────────────────────────────────────
+checkAuth();
+// Auto-load if token exists and sheet URL is prefilled
+if (token) {
+  const url = document.getElementById('sheet-url-input').value.trim();
+  if (url) {
+    const idMatch = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+    const gidMatch = url.match(/gid=(\d+)/);
+    if (idMatch) { showLoading(); loadSheetData(idMatch[1], gidMatch ? gidMatch[1] : '0'); }
+  }
+}
+</script>
+</body>
+</html>
