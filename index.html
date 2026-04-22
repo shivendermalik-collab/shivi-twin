@@ -891,15 +891,19 @@ function signOut() {
   document.getElementById('app-screen').style.display = 'none';
 }
 
-// ── EMAIL LOADING (500 with concurrency control) ──────────
+// ── EMAIL LOADING ─────────────────────────────────────────
 async function loadEmails() {
-  showStatus('Fetching inbox...');
-  showProgress(0);
+  // Show progress bar immediately
+  document.getElementById('progress-wrap').style.display = 'block';
+  document.getElementById('progress-bar').style.width = '5%';
+  document.getElementById('status-bar').style.display = 'block';
+  document.getElementById('status-bar').textContent = 'Fetching inbox...';
+
   try {
     let allMessages = [];
     let pageToken = null;
 
-    // Fetch up to 500 email IDs via pagination
+    // Fetch up to 500 email IDs
     while (allMessages.length < 500) {
       const url = `https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=100&labelIds=INBOX${pageToken ? '&pageToken=' + pageToken : ''}`;
       const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
@@ -910,19 +914,25 @@ async function loadEmails() {
       if (!pageToken) break;
     }
 
-    if (!allMessages.length) { emails = []; renderList(); hideStatus(); hideProgress(); return; }
+    if (!allMessages.length) {
+      emails = []; renderList();
+      document.getElementById('progress-wrap').style.display = 'none';
+      document.getElementById('status-bar').style.display = 'none';
+      return;
+    }
 
-    // Check cache
+    // Use cache for already-fetched emails
     const cached = emails.reduce((acc, e) => { acc[e.id] = e; return acc; }, {});
     const toFetch = allMessages.filter(m => !cached[m.id]);
 
-    showStatus(`Loading ${toFetch.length} new emails (${allMessages.length - toFetch.length} cached)...`);
+    document.getElementById('status-bar').textContent = `Loading ${toFetch.length} new emails (${allMessages.length - toFetch.length} cached)...`;
 
-    // Fetch metadata with concurrency of 10
-    const CONCURRENCY = 10;
+    // Fetch in batches of 5 with progress updates
+    const BATCH = 5;
     const newEmails = [];
-    for (let i = 0; i < toFetch.length; i += CONCURRENCY) {
-      const batch = toFetch.slice(i, i + CONCURRENCY);
+
+    for (let i = 0; i < toFetch.length; i += BATCH) {
+      const batch = toFetch.slice(i, i + BATCH);
       const results = await Promise.all(batch.map(async m => {
         try {
           const r = await fetch(
@@ -933,19 +943,31 @@ async function loadEmails() {
         } catch(e) { return null; }
       }));
       results.filter(Boolean).forEach(e => newEmails.push(e));
-      showProgress(Math.round(((i + CONCURRENCY) / toFetch.length) * 90));
-      showStatus(`Loading emails... ${Math.min(i + CONCURRENCY, toFetch.length)}/${toFetch.length}`);
+
+      // Update progress
+      const pct = 5 + Math.round(((i + BATCH) / toFetch.length) * 85);
+      document.getElementById('progress-bar').style.width = Math.min(pct, 90) + '%';
+      document.getElementById('status-bar').textContent = `Loading... ${Math.min(i + BATCH, toFetch.length)} of ${toFetch.length} emails`;
+      
+      // Small pause to avoid rate limits
+      await new Promise(resolve => setTimeout(resolve, 50));
     }
 
     // Merge preserving Gmail order
     emails = allMessages.map(m => cached[m.id] || newEmails.find(e => e?.id === m.id)).filter(Boolean);
 
-    showProgress(100);
-    setTimeout(hideProgress, 400);
+    document.getElementById('progress-bar').style.width = '100%';
+    document.getElementById('status-bar').textContent = `✓ ${emails.length} emails loaded`;
+    setTimeout(() => {
+      document.getElementById('progress-wrap').style.display = 'none';
+      document.getElementById('status-bar').style.display = 'none';
+    }, 1500);
+
     renderList();
-    showStatus(`✓ ${emails.length} emails loaded (${toFetch.length} new, ${allMessages.length - toFetch.length} cached)`);
-    setTimeout(hideStatus, 2000);
-  } catch(e) { showStatus('Error loading inbox'); hideProgress(); }
+  } catch(e) {
+    document.getElementById('status-bar').textContent = 'Error loading inbox — please sign out and sign in again';
+    document.getElementById('progress-wrap').style.display = 'none';
+  }
 }
 
 // ── TRIAGE (smart cache) ──────────────────────────────────
