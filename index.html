@@ -1517,6 +1517,7 @@ document.addEventListener('click', e => {
 
 // ── DCF MIS ───────────────────────────────────────────────
 let misRawData = [], misFilteredData = [], misFilters = { month: 'All', region: 'All', channel: 'All' };
+let misLoading = false;
 
 function showMIS() {
   hide('briefing-panel');
@@ -1525,6 +1526,11 @@ function showMIS() {
   document.getElementById('stats-strip-main').style.display = 'none';
   hide('detail-panel'); hide('claude-panel'); hide('draft-panel');
   show('mis-panel');
+  // If data already loaded, just show it
+  if (misRawData.length > 0) {
+    document.getElementById('mis-empty').style.display = 'none';
+    document.getElementById('mis-dashboard').style.display = 'block';
+  }
 }
 
 async function fetchSheetTabs() {
@@ -1558,13 +1564,19 @@ async function fetchSheetTabs() {
 }
 
 async function loadMIS() {
+  if (misLoading) return;
+  misLoading = true;
   const url = document.getElementById('mis-sheet-url').value.trim();
-  if (!url) return;
+  if (!url) { misLoading = false; return; }
   const idMatch = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
-  if (!idMatch) { misStatus('Invalid Google Sheets URL'); return; }
+  if (!idMatch) { misStatus('Invalid Google Sheets URL'); misLoading = false; return; }
 
   document.getElementById('mis-empty').style.display = 'none';
   document.getElementById('mis-dashboard').style.display = 'none';
+
+  // Wait 2s for any background Gmail fetches to complete
+  misStatus('Waiting for background tasks to settle...');
+  await new Promise(r => setTimeout(r, 2000));
 
   try {
     const sheetId = idMatch[1];
@@ -1644,8 +1656,9 @@ async function loadMIS() {
     document.getElementById('mis-refresh-btn').style.display = 'inline-flex';
     buildMISFilters();
     applyMISFilters();
+    misLoading = false;
 
-  } catch(e) { misStatus('Error: ' + e.message); }
+  } catch(e) { misStatus('Error: ' + e.message); misLoading = false; }
 }
 
 function misStatus(msg) {
