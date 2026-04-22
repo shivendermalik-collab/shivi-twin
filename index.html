@@ -1611,12 +1611,32 @@ async function loadMIS() {
     const headers = headerData.values?.[0] || [];
     if (!headers.length) { misStatus('No headers found in: ' + tabName); return; }
 
-    // Sequential batching - 5000 rows at a time
+    // Determine column range from headers
+    const neededCols = ['LEAD_ID','LEAD_CREATION_DATE','LOGIN_DATE','APPROVAL_DATE','DISBURSAL_DATE','CHANNEL','DEALER_CITY','DEALER_NAME','REGION','RISK_BUCKET','DS_CHANNEL_','FINAL_LOAN_STATUS','DISBURSAL_MONTH','LOAN_SANCTION','Channel Revised','NBFC Channel','EMPLOYMENT_DETAILS','FOS_MAPPING','SM_MAPPING'];
+    const colIndices = neededCols.map(c => headers.indexOf(c)).filter(i => i >= 0);
+    const minCol = Math.min(...colIndices);
+    const maxCol = Math.max(...colIndices);
+
+    // Convert to A1 notation
+    function colLetter(n) {
+      let s = '';
+      n++;
+      while (n > 0) { s = String.fromCharCode(65 + ((n-1) % 26)) + s; n = Math.floor((n-1) / 26); }
+      return s;
+    }
+    const startCol = colLetter(minCol);
+    const endCol = colLetter(maxCol);
+    misStatus(`Fetching columns ${startCol}:${endCol} from "${tabName}"...`);
+
+    // Sequential batching
     const BATCH = 5000;
     let allRows = [];
     let startRow = 2;
     let hasMore = true;
     let batchNum = 0;
+
+    // Rebuild headers for just the columns we're fetching
+    const fetchedHeaders = headers.slice(minCol, maxCol + 1);
 
     while (hasMore) {
       const endRow = startRow + BATCH - 1;
@@ -1624,7 +1644,7 @@ async function loadMIS() {
       misStatus(`Loading batch ${batchNum} (rows ${startRow.toLocaleString()}–${endRow.toLocaleString()})... ${allRows.length.toLocaleString()} rows loaded`);
 
       const res = await fetch(
-        `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${encodeURIComponent(tabName)}!A${startRow}:BJ${endRow}`,
+        `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${encodeURIComponent(tabName)}!${startCol}${startRow}:${endCol}${endRow}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       const d = await res.json();
@@ -1643,12 +1663,12 @@ async function loadMIS() {
       }
     }
 
-    if (!allRows.length) { misStatus('No data found in: ' + tabName); return; }
+    if (!allRows.length) { misStatus('No data found in: ' + tabName); misLoading = false; return; }
 
     misStatus(`Parsing ${allRows.length.toLocaleString()} rows...`);
     misRawData = allRows.map(row => {
       const o = {};
-      headers.forEach((h, i) => { o[h] = row[i] || ''; });
+      fetchedHeaders.forEach((h, i) => { o[h] = row[i] || ''; });
       return o;
     });
 
