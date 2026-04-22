@@ -690,7 +690,8 @@ textarea:focus { border-color: var(--purple); }
       <div class="action-bar">
         <button class="btn btn-orange" onclick="runTriage()">✦ Run Triage</button>
         <button class="btn btn-purple" onclick="showBriefing()">☀️ Daily Briefing</button>
-        <button class="btn btn-outline" onclick="loadEmails()" title="Refresh inbox">↻</button>
+        <button class="btn btn-outline" onclick="loadEmails(50)" title="Refresh inbox">↻</button>
+        <button class="btn btn-outline" onclick="applyLabels()">🏷️ Label Gmail</button>
         <div style="margin-left:auto;position:relative">
           <button class="btn btn-outline" onclick="toggleOverflow()">··· More</button>
           <div id="overflow-menu" style="display:none;position:absolute;right:0;top:36px;background:var(--white);border:1px solid var(--grey-200);border-radius:10px;box-shadow:var(--shadow-md);z-index:50;min-width:160px;padding:6px;">
@@ -1014,10 +1015,9 @@ Output ONLY the lines. No preamble.`, 4000);
 
   updateCounts(); renderList();
   showProgress(100); setTimeout(hideProgress, 400);
-  showStatus(`✓ Triage complete — ${processed} new, ${emails.length} total`);
+  showStatus(`✓ Triage complete — ${processed} new emails analyzed`);
   setTimeout(hideStatus, 3000);
   generateStripAI();
-  applyLabels(); // Auto-sync labels to Gmail
 }
 
 // ── VIEWS ─────────────────────────────────────────────────
