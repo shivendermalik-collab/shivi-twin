@@ -1574,104 +1574,33 @@ async function loadMIS() {
   document.getElementById('mis-empty').style.display = 'none';
   document.getElementById('mis-dashboard').style.display = 'none';
 
-  // Wait 2s for any background Gmail fetches to complete
-  misStatus('Waiting for background tasks to settle...');
-  await new Promise(r => setTimeout(r, 2000));
-
   try {
     const sheetId = idMatch[1];
+    const tabName = document.getElementById('mis-tab-select').value || 'New_Raw_Data';
 
-    // Use selected tab if available, otherwise resolve from GID
-    let tabName = document.getElementById('mis-tab-select').value;
+    misStatus('Loading ' + tabName + ' via CSV export...');
 
-    if (!tabName) {
-      // Fallback: resolve from GID in URL
-      misStatus('Resolving sheet tab...');
-      const gidMatch = url.match(/gid=(\d+)/);
-      const metaRes = await fetch(
-        `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}?fields=sheets.properties`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      const meta = await metaRes.json();
-      if (meta.error) { misStatus('Auth error — please sign out and sign in again'); return; }
-      tabName = meta.sheets?.[0]?.properties?.title || 'Sheet1';
-      if (meta.sheets && gidMatch) {
-        const s = meta.sheets.find(s => String(s.properties.sheetId) === String(gidMatch[1]));
-        if (s) tabName = s.properties.title;
-      }
+    const csvUrl = 'https://docs.google.com/spreadsheets/d/' + sheetId + '/gviz/tq?tqx=out:csv&sheet=' + encodeURIComponent(tabName);
+    const res = await fetch(csvUrl, { headers: { Authorization: 'Bearer ' + token } });
+
+    if (!res.ok) {
+      if (res.status === 401) { misStatus('Auth error — please sign out and sign in again'); misLoading = false; return; }
+      throw new Error('HTTP ' + res.status);
     }
 
-    // Fetch headers
-    misStatus(`Reading headers from "${tabName}"...`);
-    const headerRes = await fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${encodeURIComponent(tabName)}!1:1`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    const headerData = await headerRes.json();
-    const headers = headerData.values?.[0] || [];
-    if (!headers.length) { misStatus('No headers found in: ' + tabName); return; }
+    misStatus('Parsing data...');
+    const csvText = await res.text();
+    const rows = parseCSV(csvText);
+    if (rows.length < 2) { misStatus('No data found'); misLoading = false; return; }
 
-    // Determine column range from headers
-    const neededCols = ['LEAD_ID','LEAD_CREATION_DATE','LOGIN_DATE','APPROVAL_DATE','DISBURSAL_DATE','CHANNEL','DEALER_CITY','DEALER_NAME','REGION','RISK_BUCKET','DS_CHANNEL_','FINAL_LOAN_STATUS','DISBURSAL_MONTH','LOAN_SANCTION','Channel Revised','NBFC Channel','EMPLOYMENT_DETAILS','FOS_MAPPING','SM_MAPPING'];
-    const colIndices = neededCols.map(c => headers.indexOf(c)).filter(i => i >= 0);
-    const minCol = Math.min(...colIndices);
-    const maxCol = Math.max(...colIndices);
-
-    // Convert to A1 notation
-    function colLetter(n) {
-      let s = '';
-      n++;
-      while (n > 0) { s = String.fromCharCode(65 + ((n-1) % 26)) + s; n = Math.floor((n-1) / 26); }
-      return s;
-    }
-    const startCol = colLetter(minCol);
-    const endCol = colLetter(maxCol);
-    misStatus(`Fetching columns ${startCol}:${endCol} from "${tabName}"...`);
-
-    // Sequential batching
-    const BATCH = 5000;
-    let allRows = [];
-    let startRow = 2;
-    let hasMore = true;
-    let batchNum = 0;
-
-    // Rebuild headers for just the columns we're fetching
-    const fetchedHeaders = headers.slice(minCol, maxCol + 1);
-
-    while (hasMore) {
-      const endRow = startRow + BATCH - 1;
-      batchNum++;
-      misStatus(`Loading batch ${batchNum} (rows ${startRow.toLocaleString()}–${endRow.toLocaleString()})... ${allRows.length.toLocaleString()} rows loaded`);
-
-      const res = await fetch(
-        `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${encodeURIComponent(tabName)}!${startCol}${startRow}:${endCol}${endRow}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      const d = await res.json();
-
-      if (d.error) {
-        misStatus(`Error on batch ${batchNum}: ${d.error.message}`);
-        break;
-      }
-
-      if (!d.values || d.values.length === 0) {
-        hasMore = false;
-      } else {
-        allRows = allRows.concat(d.values);
-        hasMore = d.values.length >= BATCH;
-        startRow += BATCH;
-      }
-    }
-
-    if (!allRows.length) { misStatus('No data found in: ' + tabName); misLoading = false; return; }
-
-    misStatus(`Parsing ${allRows.length.toLocaleString()} rows...`);
-    misRawData = allRows.map(row => {
+    const headers = rows[0];
+    misRawData = rows.slice(1).map(row => {
       const o = {};
-      fetchedHeaders.forEach((h, i) => { o[h] = row[i] || ''; });
+      headers.forEach((h, i) => { o[h.trim()] = (row[i] || '').trim(); });
       return o;
     });
 
+    misStatus('');
     document.getElementById('mis-status').style.display = 'none';
     document.getElementById('mis-refresh-btn').style.display = 'inline-flex';
     buildMISFilters();
@@ -1680,6 +1609,32 @@ async function loadMIS() {
 
   } catch(e) { misStatus('Error: ' + e.message); misLoading = false; }
 }
+
+function parseCSV(text) {
+  const rows = [];
+  let row = [], field = '', inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (c === '"') {
+      if (inQuotes && text[i+1] === '"') { field += '"'; i++; }
+      else inQuotes = !inQuotes;
+    } else if (c === ',' && !inQuotes) {
+      row.push(field); field = '';
+    } else if ((c === '
+' || c === '
+') && !inQuotes) {
+      if (c === '
+' && text[i+1] === '
+') i++;
+      row.push(field); field = '';
+      if (row.some(f => f !== '')) rows.push(row);
+      row = [];
+    } else { field += c; }
+  }
+  if (field || row.length) { row.push(field); if (row.some(f => f !== '')) rows.push(row); }
+  return rows;
+}
+
 
 function misStatus(msg) {
   const el = document.getElementById('mis-status');
