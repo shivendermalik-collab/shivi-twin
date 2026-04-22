@@ -669,6 +669,11 @@ textarea:focus { border-color: var(--purple); }
       </div>
       <div class="sidebar-divider"></div>
       <div class="sidebar-section">
+        <div class="sidebar-label">Analytics</div>
+        <div class="nav-item" onclick="setView('mis', this)"><span class="nav-icon">📊</span>DCF MIS</div>
+      </div>
+      <div class="sidebar-divider"></div>
+      <div class="sidebar-section">
         <div class="sidebar-label">Channels</div>
         <div class="nav-item" onclick="setView('gmail', this)"><span class="nav-icon">✉️</span>Gmail</div>
         <div class="nav-item" style="opacity:0.4;cursor:default"><span class="nav-icon">💬</span>Slack <span style="font-size:9px;color:var(--orange);margin-left:4px">Soon</span></div>
@@ -687,7 +692,7 @@ textarea:focus { border-color: var(--purple); }
     <div class="content">
 
       <!-- Action bar -->
-      <div class="action-bar">
+      <div class="action-bar" id="action-bar-main">
         <button class="btn btn-orange" onclick="runTriage()">✦ Run Triage</button>
         <button class="btn btn-purple" onclick="showBriefing()">☀️ Daily Briefing</button>
         <button class="btn btn-outline" onclick="loadEmails(50)" title="Refresh inbox">↻</button>
@@ -707,7 +712,7 @@ textarea:focus { border-color: var(--purple); }
       <div class="status-bar" id="status-bar"></div>
 
       <!-- Stats -->
-      <div class="stats-strip">
+      <div class="stats-strip" id="stats-strip-main">
         <div class="stat-card s-red"><div class="stat-num" id="s-must">—</div><div class="stat-label">Must Act</div></div>
         <div class="stat-card s-purple"><div class="stat-num" id="s-dcf">—</div><div class="stat-label">DCF</div></div>
         <div class="stat-card s-yellow"><div class="stat-num" id="s-skim">—</div><div class="stat-label">Skim</div></div>
@@ -756,6 +761,101 @@ textarea:focus { border-color: var(--purple); }
         <div class="claude-body" id="claude-body"></div>
       </div>
 
+      <!-- DCF MIS Panel -->
+      <div id="mis-panel" style="display:none">
+
+        <!-- MIS Action bar -->
+        <div class="action-bar" style="margin-bottom:16px">
+          <div style="font-family:'Montserrat',sans-serif;font-size:13px;font-weight:700;color:var(--black)">📊 DCF MIS Dashboard</div>
+          <input id="mis-sheet-url" style="flex:1;max-width:400px;border:1px solid var(--grey-200);border-radius:8px;padding:8px 12px;font-family:'Montserrat',sans-serif;font-size:11px;outline:none;margin-left:8px" 
+            placeholder="Paste Google Sheet URL..." 
+            value="https://docs.google.com/spreadsheets/d/17Uktk9crbcF-rps1SSVfAQmwkRb3Vhl1t717IQvw8qI/edit?gid=2122627395#gid=2122627395">
+          <button class="btn btn-orange" onclick="loadMIS()">Load MIS</button>
+          <button class="btn btn-outline" onclick="loadMIS()" id="mis-refresh-btn" style="display:none">↻ Refresh</button>
+        </div>
+
+        <!-- MIS Filters -->
+        <div id="mis-filters" style="display:none;background:var(--white);border:1px solid var(--grey-200);border-radius:12px;padding:12px 16px;margin-bottom:14px;display:none;align-items:center;gap:12px;flex-wrap:wrap">
+          <span style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--grey-400)">Month</span>
+          <div id="mis-month-filters" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+          <div style="width:1px;height:20px;background:var(--grey-200)"></div>
+          <span style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--grey-400)">Region</span>
+          <div id="mis-region-filters" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+          <div style="width:1px;height:20px;background:var(--grey-200)"></div>
+          <span style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--grey-400)">Channel</span>
+          <div id="mis-channel-filters" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+        </div>
+
+        <!-- MIS Status -->
+        <div id="mis-status" style="display:none;background:var(--purple-light);border:1px solid rgba(61,61,170,0.15);border-radius:8px;padding:8px 14px;font-size:11px;font-weight:600;color:var(--purple);margin-bottom:12px"></div>
+
+        <!-- MIS Empty -->
+        <div id="mis-empty" style="text-align:center;padding:60px 20px;color:var(--grey-400)">
+          <div style="font-size:36px;margin-bottom:12px">📊</div>
+          <div style="font-size:14px;font-weight:700;color:var(--black);margin-bottom:8px">DCF MIS Dashboard</div>
+          <div style="font-size:12px;font-weight:500;line-height:1.6">Paste your Google Sheet URL above and click Load MIS</div>
+        </div>
+
+        <!-- MIS Dashboard -->
+        <div id="mis-dashboard" style="display:none">
+
+          <!-- KPI Strip -->
+          <div id="mis-kpi" style="display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:16px"></div>
+
+          <!-- Funnel -->
+          <div style="background:var(--white);border:1px solid var(--grey-200);border-radius:14px;box-shadow:0 1px 4px rgba(0,0,0,0.08);overflow:hidden;margin-bottom:16px">
+            <div style="padding:14px 18px;border-bottom:1px solid var(--grey-200);display:flex;align-items:center;justify-content:space-between">
+              <span style="font-size:12px;font-weight:700">Loan Origination Funnel</span>
+              <span id="mis-funnel-badge" style="font-size:9px;font-weight:700;padding:3px 8px;border-radius:10px;background:var(--purple-light);color:var(--purple)"></span>
+            </div>
+            <div id="mis-funnel" style="display:flex"></div>
+          </div>
+
+          <!-- Charts Row 1 -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+            <div style="background:var(--white);border:1px solid var(--grey-200);border-radius:14px;box-shadow:0 1px 4px rgba(0,0,0,0.08);overflow:hidden">
+              <div style="padding:14px 18px;border-bottom:1px solid var(--grey-200);display:flex;align-items:center;justify-content:space-between">
+                <span style="font-size:12px;font-weight:700">Channel Mix — Disbursals</span>
+                <span id="mis-ch-badge" style="font-size:9px;font-weight:700;padding:3px 8px;border-radius:10px;background:var(--orange-light);color:var(--orange)"></span>
+              </div>
+              <div id="mis-channel-chart" style="padding:16px 18px"></div>
+            </div>
+            <div style="background:var(--white);border:1px solid var(--grey-200);border-radius:14px;box-shadow:0 1px 4px rgba(0,0,0,0.08);overflow:hidden">
+              <div style="padding:14px 18px;border-bottom:1px solid var(--grey-200)">
+                <span style="font-size:12px;font-weight:700">Region Split</span>
+              </div>
+              <div id="mis-region-chart" style="padding:16px 18px"></div>
+            </div>
+          </div>
+
+          <!-- Charts Row 2 -->
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px">
+            <div style="background:var(--white);border:1px solid var(--grey-200);border-radius:14px;box-shadow:0 1px 4px rgba(0,0,0,0.08);overflow:hidden">
+              <div style="padding:14px 18px;border-bottom:1px solid var(--grey-200)"><span style="font-size:12px;font-weight:700">Green / Amber / Red</span></div>
+              <div id="mis-ds-chart" style="padding:16px 18px"></div>
+            </div>
+            <div style="background:var(--white);border:1px solid var(--grey-200);border-radius:14px;box-shadow:0 1px 4px rgba(0,0,0,0.08);overflow:hidden">
+              <div style="padding:14px 18px;border-bottom:1px solid var(--grey-200)"><span style="font-size:12px;font-weight:700">Risk Bucket</span></div>
+              <div id="mis-risk-chart" style="padding:16px 18px"></div>
+            </div>
+            <div style="background:var(--white);border:1px solid var(--grey-200);border-radius:14px;box-shadow:0 1px 4px rgba(0,0,0,0.08);overflow:hidden">
+              <div style="padding:14px 18px;border-bottom:1px solid var(--grey-200)"><span style="font-size:12px;font-weight:700">Book Type</span></div>
+              <div id="mis-book-chart" style="padding:16px 18px"></div>
+            </div>
+          </div>
+
+          <!-- Monthly Table -->
+          <div style="background:var(--white);border:1px solid var(--grey-200);border-radius:14px;box-shadow:0 1px 4px rgba(0,0,0,0.08);overflow:hidden;margin-bottom:16px">
+            <div style="padding:14px 18px;border-bottom:1px solid var(--grey-200);display:flex;align-items:center;justify-content:space-between">
+              <span style="font-size:12px;font-weight:700">Month-wise Performance</span>
+              <span style="font-size:9px;font-weight:700;padding:3px 8px;border-radius:10px;background:var(--purple-light);color:var(--purple)">GMV in ₹ Cr</span>
+            </div>
+            <div style="overflow-x:auto"><table id="mis-monthly-table" style="width:100%;border-collapse:collapse"></table></div>
+          </div>
+
+        </div>
+      </div>
+
       <!-- Draft panel -->
       <div id="draft-panel">
         <div class="draft-header">Draft Reply</div>
@@ -790,6 +890,7 @@ const SCOPES = [
   'https://www.googleapis.com/auth/gmail.readonly',
   'https://www.googleapis.com/auth/gmail.modify',
   'https://www.googleapis.com/auth/gmail.labels',
+  'https://www.googleapis.com/auth/spreadsheets.readonly',
   'https://www.googleapis.com/auth/userinfo.email'
 ].join(' ');
 
@@ -1026,8 +1127,12 @@ function setView(view, el) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   if (el) el.classList.add('active');
   hide('briefing-panel');
+  hide('mis-panel');
   document.getElementById('message-list').style.display = 'flex';
+  document.getElementById('action-bar-main').style.display = 'flex';
+  document.getElementById('stats-strip-main').style.display = 'grid';
   if (view === 'briefing') { showBriefing(); return; }
+  if (view === 'mis') { showMIS(); return; }
   renderList();
 }
 
@@ -1405,6 +1510,196 @@ document.addEventListener('click', e => {
     menu.style.display = 'none';
   }
 });
+
+// ── DCF MIS ───────────────────────────────────────────────
+let misRawData = [], misFilteredData = [], misFilters = { month: 'All', region: 'All', channel: 'All' };
+
+function showMIS() {
+  hide('briefing-panel');
+  document.getElementById('message-list').style.display = 'none';
+  document.getElementById('action-bar-main').style.display = 'none';
+  document.getElementById('stats-strip-main').style.display = 'none';
+  hide('detail-panel'); hide('claude-panel'); hide('draft-panel');
+  show('mis-panel');
+}
+
+async function loadMIS() {
+  const url = document.getElementById('mis-sheet-url').value.trim();
+  if (!url) return;
+  const idMatch = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+  const gidMatch = url.match(/gid=(\d+)/);
+  if (!idMatch) { misStatus('Invalid Google Sheets URL'); return; }
+  misStatus('Fetching sheet data...');
+  document.getElementById('mis-empty').style.display = 'none';
+  document.getElementById('mis-dashboard').style.display = 'none';
+  try {
+    const sheetId = idMatch[1];
+    const gid = gidMatch ? gidMatch[1] : '0';
+    const metaRes = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}?fields=sheets.properties`, { headers: { Authorization: `Bearer ${token}` } });
+    const meta = await metaRes.json();
+    if (meta.error) { misStatus('Auth error — please sign out and sign in again'); return; }
+    let tabName = 'Sheet1';
+    if (meta.sheets) { const s = meta.sheets.find(s => s.properties.sheetId == gid); if (s) tabName = s.properties.title; }
+    misStatus(`Reading ${tabName}...`);
+    const dataRes = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${encodeURIComponent(tabName)}`, { headers: { Authorization: `Bearer ${token}` } });
+    const data = await dataRes.json();
+    if (!data.values || data.values.length < 2) { misStatus('No data found'); return; }
+    const headers = data.values[0];
+    misRawData = data.values.slice(1).map(row => { const o = {}; headers.forEach((h, i) => { o[h] = row[i] || ''; }); return o; });
+    misStatus('');
+    document.getElementById('mis-status').style.display = 'none';
+    document.getElementById('mis-refresh-btn').style.display = 'inline-flex';
+    buildMISFilters();
+    applyMISFilters();
+  } catch(e) { misStatus('Error: ' + e.message); }
+}
+
+function misStatus(msg) {
+  const el = document.getElementById('mis-status');
+  if (!msg) { el.style.display = 'none'; return; }
+  el.style.display = 'block'; el.textContent = msg;
+}
+
+function buildMISFilters() {
+  const months = [...new Set(misRawData.map(r => r['DISBURSAL_MONTH']).filter(Boolean))].sort().reverse();
+  const regions = [...new Set(misRawData.map(r => r['REGION']).filter(Boolean))].sort();
+  const channels = [...new Set(misRawData.map(r => r['Channel Revised']).filter(Boolean))].sort();
+  const mf = document.getElementById('mis-month-filters');
+  const rf = document.getElementById('mis-region-filters');
+  const cf = document.getElementById('mis-channel-filters');
+  mf.innerHTML = misFilterBtn('All','month',true); months.forEach(m => mf.innerHTML += misFilterBtn(m,'month'));
+  rf.innerHTML = misFilterBtn('All','region',true); regions.forEach(r => rf.innerHTML += misFilterBtn(r,'region'));
+  cf.innerHTML = misFilterBtn('All','channel',true); channels.slice(0,6).forEach(c => cf.innerHTML += misFilterBtn(c,'channel'));
+  document.getElementById('mis-filters').style.display = 'flex';
+}
+
+function misFilterBtn(label, type, active=false) {
+  return `<button style="border:1px solid ${active?'var(--purple)':'var(--grey-200)'};background:${active?'var(--purple)':'var(--white)'};color:${active?'var(--white)':'var(--grey-600)'};border-radius:20px;padding:5px 12px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Montserrat',sans-serif" onclick="setMISFilter('${type}','${label}',this)">${label}</button>`;
+}
+
+function setMISFilter(type, value, el) {
+  misFilters[type] = value;
+  el.closest('div').querySelectorAll('button').forEach(b => { b.style.background='var(--white)'; b.style.borderColor='var(--grey-200)'; b.style.color='var(--grey-600)'; });
+  el.style.background='var(--purple)'; el.style.borderColor='var(--purple)'; el.style.color='var(--white)';
+  applyMISFilters();
+}
+
+function applyMISFilters() {
+  misFilteredData = misRawData.filter(r => {
+    if (misFilters.month !== 'All' && r['DISBURSAL_MONTH'] !== misFilters.month) return false;
+    if (misFilters.region !== 'All' && r['REGION'] !== misFilters.region) return false;
+    if (misFilters.channel !== 'All' && r['Channel Revised'] !== misFilters.channel) return false;
+    return true;
+  });
+  renderMIS();
+}
+
+function renderMIS() {
+  const d = misFilteredData;
+  const disbursed = d.filter(r => r['DISBURSAL_DATE'] && r['DISBURSAL_DATE'] !== '');
+  const logins = d.filter(r => r['LOGIN_DATE'] && r['LOGIN_DATE'] !== '');
+  const approvals = d.filter(r => r['APPROVAL_DATE'] && r['APPROVAL_DATE'] !== '');
+  const gmv = disbursed.reduce((s,r) => s+(parseFloat(r['LOAN_SANCTION'])||0), 0);
+  const avgT = disbursed.length ? gmv/disbursed.length/1000 : 0;
+  const l2d = logins.length ? (disbursed.length/logins.length*100).toFixed(1) : 0;
+  const l2a = logins.length ? (approvals.length/logins.length*100).toFixed(1) : 0;
+  const a2d = approvals.length ? (disbursed.length/approvals.length*100).toFixed(1) : 0;
+
+  document.getElementById('mis-kpi').innerHTML = [
+    { label:'Disbursals', val:disbursed.length.toLocaleString(), sub:'cases', color:'#FF5100' },
+    { label:'GMV', val:`₹${(gmv/1e7).toFixed(1)}Cr`, sub:'loan sanctions', color:'#3D3DAA' },
+    { label:'L2D%', val:`${l2d}%`, sub:'login→disbursal', color:'#1A9E5F' },
+    { label:'Logins', val:logins.length.toLocaleString(), sub:'cases', color:'#1976D2' },
+    { label:'Approvals', val:approvals.length.toLocaleString(), sub:'cases', color:'#00796B' },
+    { label:'Avg Ticket', val:`₹${avgT.toFixed(0)}K`, sub:'per disbursal', color:'#E53935' }
+  ].map(k => `<div style="background:var(--white);border:1px solid var(--grey-200);border-radius:14px;padding:16px 14px;box-shadow:0 1px 4px rgba(0,0,0,0.08);position:relative;overflow:hidden">
+    <div style="position:absolute;top:0;left:0;right:0;height:3px;background:${k.color}"></div>
+    <div style="font-size:24px;font-weight:800;letter-spacing:-0.5px;color:${k.color};margin-bottom:3px">${k.val}</div>
+    <div style="font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--grey-400)">${k.label}</div>
+    <div style="font-size:10px;font-weight:600;color:var(--grey-400);margin-top:3px">${k.sub}</div>
+  </div>`).join('');
+
+  document.getElementById('mis-funnel-badge').textContent = `${d.length.toLocaleString()} total leads`;
+  document.getElementById('mis-funnel').innerHTML = [
+    { label:'Leads', val:d.length },
+    { label:'Logins', val:logins.length, rate:`${(logins.length/Math.max(d.length,1)*100).toFixed(1)}%` },
+    { label:'Approvals', val:approvals.length, rate:`L2A ${l2a}%` },
+    { label:'Disbursals', val:disbursed.length, rate:`L2D ${l2d}%` },
+    { label:'A2D%', val:`${a2d}%`, rate:'approval→disbursal' }
+  ].map(s => `<div style="flex:1;text-align:center;padding:16px 8px;border-right:1px solid var(--grey-200)">
+    <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--grey-400);margin-bottom:4px">${s.label}</div>
+    <div style="font-size:20px;font-weight:800;color:var(--purple);margin-bottom:6px">${String(s.val).toLocaleString()}</div>
+    ${s.rate ? `<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:var(--grey-100);color:var(--grey-600)">${s.rate}</span>` : ''}
+  </div>`).join('');
+
+  const misBar = (data, colorFn, valFn) => {
+    const max = Math.max(...data.map(([,v])=>v.length), 1);
+    return data.sort((a,b)=>b[1].length-a[1].length).slice(0,8).map(([k,v]) => `
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div style="font-size:11px;font-weight:600;color:var(--grey-800);width:110px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${k}">${k}</div>
+        <div style="flex:1;height:6px;background:var(--grey-100);border-radius:3px;overflow:hidden"><div style="height:100%;border-radius:3px;background:${colorFn(k)};width:${v.length/max*100}%"></div></div>
+        <div style="font-size:11px;font-weight:700;color:var(--grey-800);width:70px;text-align:right">${v.length} <span style="color:var(--grey-400);font-size:10px">${valFn(v)}</span></div>
+      </div>`).join('');
+  };
+
+  const chG = misGroupBy(disbursed,'Channel Revised');
+  document.getElementById('mis-ch-badge').textContent = `${disbursed.length} cases`;
+  document.getElementById('mis-channel-chart').innerHTML = misBar(Object.entries(chG), ()=>'#3D3DAA', v=>`₹${(v.reduce((s,r)=>s+(parseFloat(r['LOAN_SANCTION'])||0),0)/1e7).toFixed(1)}Cr`);
+
+  const regG = misGroupBy(disbursed,'REGION');
+  document.getElementById('mis-region-chart').innerHTML = misBar(Object.entries(regG), ()=>'#1A9E5F', v=>`${(v.length/Math.max(disbursed.length,1)*100).toFixed(0)}%`);
+
+  const dsG = misGroupBy(disbursed,'DS_CHANNEL_');
+  const dsC = {'GreenChannelQualified-Cars24_BL':'#1A9E5F','GreenChannelQualified-Cars24':'#1A9E5F','AmberChannel':'#F9A825','RedChannel':'#E53935','na':'#999'};
+  const dsL = {'GreenChannelQualified-Cars24_BL':'Green (BL)','GreenChannelQualified-Cars24':'Green (Q)','AmberChannel':'Amber','RedChannel':'Red','na':'NA'};
+  const dsMax = Math.max(...Object.values(dsG).map(v=>v.length),1);
+  document.getElementById('mis-ds-chart').innerHTML = Object.entries(dsG).sort((a,b)=>b[1].length-a[1].length).map(([k,v])=>`
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+      <div style="font-size:11px;font-weight:600;color:var(--grey-800);width:80px;flex-shrink:0">${dsL[k]||k}</div>
+      <div style="flex:1;height:6px;background:var(--grey-100);border-radius:3px;overflow:hidden"><div style="height:100%;border-radius:3px;background:${dsC[k]||'#999'};width:${v.length/dsMax*100}%"></div></div>
+      <div style="font-size:11px;font-weight:700;color:var(--grey-800);width:60px;text-align:right">${v.length} <span style="color:var(--grey-400);font-size:10px">${(v.length/Math.max(disbursed.length,1)*100).toFixed(0)}%</span></div>
+    </div>`).join('');
+
+  const rbG = misGroupBy(disbursed.filter(r=>r['RISK_BUCKET']&&r['RISK_BUCKET']!=='na'),'RISK_BUCKET');
+  const rbC = {A:'#1A9E5F',B:'#43A047',C:'#F9A825',D:'#FF5100',E:'#E53935'};
+  const rbMax = Math.max(...Object.values(rbG).map(v=>v.length),1);
+  document.getElementById('mis-risk-chart').innerHTML = ['A','B','C','D','E'].filter(k=>rbG[k]).map(k=>{
+    const v=rbG[k];
+    return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+      <div style="font-size:11px;font-weight:600;color:var(--grey-800);width:60px">Risk ${k}</div>
+      <div style="flex:1;height:6px;background:var(--grey-100);border-radius:3px;overflow:hidden"><div style="height:100%;border-radius:3px;background:${rbC[k]};width:${v.length/rbMax*100}%"></div></div>
+      <div style="font-size:11px;font-weight:700;color:var(--grey-800);width:60px;text-align:right">${v.length} <span style="color:var(--grey-400);font-size:10px">${(v.length/Math.max(disbursed.length,1)*100).toFixed(0)}%</span></div>
+    </div>`;}).join('');
+
+  const bookG = misGroupBy(disbursed,'NBFC Channel');
+  document.getElementById('mis-book-chart').innerHTML = misBar(Object.entries(bookG), ()=>'#6B6BC8', v=>`₹${(v.reduce((s,r)=>s+(parseFloat(r['LOAN_SANCTION'])||0),0)/1e7).toFixed(1)}Cr`);
+
+  const mG = misGroupBy(disbursed,'DISBURSAL_MONTH');
+  document.getElementById('mis-monthly-table').innerHTML = `
+    <thead><tr style="background:var(--grey-50)">${['Month','Disbursals','GMV (₹Cr)','Avg Ticket','L2D%','Green%','Amber%'].map(h=>`<th style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--grey-400);padding:10px 12px;text-align:left;border-bottom:1px solid var(--grey-200)">${h}</th>`).join('')}</tr></thead>
+    <tbody>${Object.keys(mG).sort().reverse().map(m=>{
+      const rows=mG[m], mGmv=rows.reduce((s,r)=>s+(parseFloat(r['LOAN_SANCTION'])||0),0);
+      const mL=d.filter(r=>r['LOGIN_DATE']&&r['DISBURSAL_MONTH']===m);
+      const mL2d=mL.length?(rows.length/mL.length*100).toFixed(1):'-';
+      const gPct=rows.length?(rows.filter(r=>r['DS_CHANNEL_']?.includes('Green')).length/rows.length*100).toFixed(0):0;
+      const aPct=rows.length?(rows.filter(r=>r['DS_CHANNEL_']==='AmberChannel').length/rows.length*100).toFixed(0):0;
+      const lc=parseFloat(mL2d)>40?'#1A9E5F':'#FF5100';
+      return `<tr style="border-bottom:1px solid var(--grey-100)">
+        <td style="padding:10px 12px;font-size:12px;font-weight:700">${m}</td>
+        <td style="padding:10px 12px;font-size:12px;font-weight:700">${rows.length.toLocaleString()}</td>
+        <td style="padding:10px 12px;font-size:12px;font-weight:700">₹${(mGmv/1e7).toFixed(1)}</td>
+        <td style="padding:10px 12px;font-size:12px;color:var(--grey-600)">₹${rows.length?(mGmv/rows.length/1000).toFixed(0):0}K</td>
+        <td style="padding:10px 12px"><span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:6px;background:${lc}20;color:${lc}">${mL2d}%</span></td>
+        <td style="padding:10px 12px"><span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:6px;background:#E8F7F0;color:#1A9E5F">${gPct}%</span></td>
+        <td style="padding:10px 12px"><span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:6px;background:#FFFDE7;color:#F9A825">${aPct}%</span></td>
+      </tr>`;}).join('')}</tbody>`;
+
+  document.getElementById('mis-dashboard').style.display = 'block';
+}
+
+function misGroupBy(arr, key) {
+  return arr.reduce((acc,row) => { const k=row[key]||'Unknown'; acc[k]=acc[k]||[]; acc[k].push(row); return acc; }, {});
+}
 
 checkAuth();
 </script>
