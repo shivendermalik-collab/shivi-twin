@@ -917,13 +917,20 @@ async function loadEmails() {
 
     showStatus(`Loading ${toFetch.length} new emails (${allMessages.length - toFetch.length} cached)...`);
 
-    const newEmails = await Promise.all(toFetch.map(async m => {
-      const r = await fetch(
-        `https://gmail.googleapis.com/gmail/v1/users/me/messages/${m.id}?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      return r.json();
-    }));
+    const newEmails = [];
+    for (let i = 0; i < toFetch.length; i++) {
+      const m = toFetch[i];
+      try {
+        const r = await fetch(
+          `https://gmail.googleapis.com/gmail/v1/users/me/messages/${m.id}?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        const d = await r.json();
+        newEmails.push(d);
+      } catch(e) {}
+      // Rate limit: pause every 20 requests
+      if (i > 0 && i % 20 === 0) await new Promise(r => setTimeout(r, 100));
+    }
 
     // Merge: preserve order from Gmail, use cached where available
     emails = allMessages.map(m => cached[m.id] || newEmails.find(e => e.id === m.id)).filter(Boolean);
@@ -1219,35 +1226,32 @@ async function applyLabels() {
   ];
 
   // Step 1 — fetch all existing labels
-  let existingLabels = [];
+  gmailLabels = {};
   try {
     const r = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/labels', {
       headers: { Authorization: `Bearer ${token}` }
     });
     const d = await r.json();
-    existingLabels = d.labels || [];
+    const existing = d.labels || [];
+    // Map existing labels by name
+    existing.forEach(l => { gmailLabels[l.name] = l.id; });
   } catch(e) { showStatus('Error fetching Gmail labels'); return; }
 
-  // Step 2 — for each label def, use existing ID or create new
-  gmailLabels = {};
+  // Step 2 — create only missing labels
   for (const ld of labelDefs) {
-    const existing = existingLabels.find(l => l.name === ld.name);
-    if (existing) {
-      gmailLabels[ld.name] = existing.id;
-    } else {
-      try {
-        const r = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/labels', {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: ld.name, color: ld.color, labelListVisibility: 'labelShow', messageListVisibility: 'show' })
-        });
-        const d = await r.json();
-        if (d.id) gmailLabels[ld.name] = d.id;
-      } catch(e) {}
-    }
+    if (gmailLabels[ld.name]) continue; // Already exists, skip
+    try {
+      const r = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/labels', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: ld.name, color: ld.color, labelListVisibility: 'labelShow', messageListVisibility: 'show' })
+      });
+      const d = await r.json();
+      if (d.id) gmailLabels[ld.name] = d.id;
+    } catch(e) {}
   }
 
-  // Step 3 — apply labels to triaged emails
+  // Step 3 — apply labels in batches with rate limiting
   const priorityToLabel = {
     MUST_READ: 'Shivi-twin/Must-Act',
     DCF: 'Shivi-twin/DCF',
@@ -1263,6 +1267,7 @@ async function applyLabels() {
     const labelName = priorityToLabel[t.priority];
     const labelId = gmailLabels[labelName];
     if (!labelId) continue;
+
     try {
       const r = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${msgId}/modify`, {
         method: 'POST',
@@ -1272,11 +1277,14 @@ async function applyLabels() {
       if (r.ok) applied++;
     } catch(e) {}
 
-    // Update status every 50 emails
-    if (i % 50 === 0) showStatus(`Labeling emails... ${i}/${entries.length}`);
+    // Rate limit: pause every 10 requests
+    if (i > 0 && i % 10 === 0) {
+      showStatus(`Labeling... ${i}/${entries.length}`);
+      await new Promise(r => setTimeout(r, 200));
+    }
   }
 
-  showStatus(`✓ Labeled ${applied} emails in Gmail under Shivi-twin/`);
+  showStatus(`✓ Labeled ${applied}/${entries.length} emails in Gmail`);
   setTimeout(hideStatus, 4000);
 }
 
