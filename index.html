@@ -1577,29 +1577,55 @@ async function loadMIS() {
   try {
     const sheetId = idMatch[1];
     const tabName = document.getElementById('mis-tab-select').value || 'New_Raw_Data';
-    misStatus('Loading ' + tabName + '...');
 
-    // Use export as TSV - single fast request, works with Bearer token
-    const exportUrl = 'https://docs.google.com/spreadsheets/d/' + sheetId + '/export?format=tsv&id=' + sheetId + '&sheet=' + encodeURIComponent(tabName);
-    const res = await fetch(exportUrl, { headers: { Authorization: 'Bearer ' + token } });
+    // Fetch header row first
+    misStatus('Reading headers from ' + tabName + '...');
+    const hRes = await fetch(
+      'https://sheets.googleapis.com/v4/spreadsheets/' + sheetId + '/values/' + encodeURIComponent(tabName) + '!1:1',
+      { headers: { Authorization: 'Bearer ' + token } }
+    );
+    const hData = await hRes.json();
+    if (hData.error) {
+      misStatus('Error: ' + (hData.error.status === 'UNAUTHENTICATED' ? 'Sign out and sign in again' : hData.error.message));
+      misLoading = false; return;
+    }
+    const headers = hData.values ? hData.values[0] : [];
+    if (!headers.length) { misStatus('No headers found in ' + tabName); misLoading = false; return; }
 
-    if (res.status === 401) { misStatus('Auth error — sign out and sign in again'); misLoading = false; return; }
-    if (!res.ok) throw new Error('HTTP ' + res.status);
+    // Fetch data in batches of 3000 rows
+    const BATCH = 3000;
+    let allRows = [];
+    let startRow = 2;
+    let batchNum = 0;
 
-    misStatus('Parsing...');
-    const text = await res.text();
-    const lines = text.split('\n').map(l => l.replace('\r','')).filter(l => l.trim());
-    if (lines.length < 2) { misStatus('No data found'); misLoading = false; return; }
+    while (true) {
+      batchNum++;
+      const endRow = startRow + BATCH - 1;
+      misStatus('Loading batch ' + batchNum + ' (rows ' + startRow + '-' + endRow + ')... ' + allRows.length + ' rows loaded');
 
-    const headers = lines[0].split('	');
-    misRawData = lines.slice(1).map(line => {
-      const cols = line.split('	');
-      const o = {};
-      headers.forEach((h, i) => { o[h.trim()] = (cols[i] || '').trim(); });
+      const dRes = await fetch(
+        'https://sheets.googleapis.com/v4/spreadsheets/' + sheetId + '/values/' + encodeURIComponent(tabName) + '!A' + startRow + ':BJ' + endRow,
+        { headers: { Authorization: 'Bearer ' + token } }
+      );
+      const dData = await dRes.json();
+
+      if (dData.error) { misStatus('Error on batch ' + batchNum + ': ' + dData.error.message); misLoading = false; return; }
+      if (!dData.values || dData.values.length === 0) break;
+
+      allRows = allRows.concat(dData.values);
+      if (dData.values.length < BATCH) break;
+      startRow += BATCH;
+    }
+
+    if (!allRows.length) { misStatus('No data found in ' + tabName); misLoading = false; return; }
+
+    misStatus('Parsing ' + allRows.length + ' rows...');
+    misRawData = allRows.map(function(row) {
+      var o = {};
+      headers.forEach(function(h, i) { o[h] = row[i] || ''; });
       return o;
     });
 
-    misStatus('');
     document.getElementById('mis-status').style.display = 'none';
     document.getElementById('mis-refresh-btn').style.display = 'inline-flex';
     buildMISFilters();
