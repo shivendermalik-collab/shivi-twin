@@ -1535,17 +1535,39 @@ async function loadMIS() {
   try {
     const sheetId = idMatch[1];
     const gid = gidMatch ? gidMatch[1] : '0';
-    const metaRes = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}?fields=sheets.properties`, { headers: { Authorization: `Bearer ${token}` } });
+
+    // Get sheet name from GID
+    const metaRes = await fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}?fields=sheets.properties`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
     const meta = await metaRes.json();
     if (meta.error) { misStatus('Auth error — please sign out and sign in again'); return; }
-    let tabName = 'Sheet1';
-    if (meta.sheets) { const s = meta.sheets.find(s => s.properties.sheetId == gid); if (s) tabName = s.properties.title; }
-    misStatus(`Reading ${tabName}...`);
-    const dataRes = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${encodeURIComponent(tabName)}`, { headers: { Authorization: `Bearer ${token}` } });
+
+    let tabName = null;
+    if (meta.sheets) {
+      const s = meta.sheets.find(s => String(s.properties.sheetId) === String(gid));
+      if (s) tabName = s.properties.title;
+    }
+    if (!tabName) tabName = meta.sheets?.[0]?.properties?.title || 'Sheet1';
+
+    misStatus(`Reading "${tabName}"...`);
+
+    // Fetch only first 10000 rows to keep it fast
+    const dataRes = await fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${encodeURIComponent(tabName)}!A1:BJ10000`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
     const data = await dataRes.json();
-    if (!data.values || data.values.length < 2) { misStatus('No data found'); return; }
+    if (!data.values || data.values.length < 2) { misStatus('No data found in tab: ' + tabName); return; }
+
     const headers = data.values[0];
-    misRawData = data.values.slice(1).map(row => { const o = {}; headers.forEach((h, i) => { o[h] = row[i] || ''; }); return o; });
+    misRawData = data.values.slice(1).map(row => {
+      const o = {};
+      headers.forEach((h, i) => { o[h] = row[i] || ''; });
+      return o;
+    });
+
     misStatus('');
     document.getElementById('mis-status').style.display = 'none';
     document.getElementById('mis-refresh-btn').style.display = 'inline-flex';
