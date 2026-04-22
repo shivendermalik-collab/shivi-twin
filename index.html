@@ -952,8 +952,8 @@ async function runTriage() {
   showProgress(0);
   showStatus(`Claude is triaging ${uncached.length} new emails (${emails.length - uncached.length} from cache)...`);
 
-  // Process in batches of 50 to avoid token limits
-  const BATCH = 50;
+  // Process in batches of 100 to avoid token limits
+  const BATCH = 100;
   let processed = 0;
 
   for (let i = 0; i < uncached.length; i += BATCH) {
@@ -1011,6 +1011,7 @@ Output ONLY the lines. No preamble.`, 4000);
   showStatus(`✓ Triage complete — ${processed} new, ${emails.length} total`);
   setTimeout(hideStatus, 3000);
   generateStripAI();
+  applyLabels(); // Auto-sync labels to Gmail
 }
 
 // ── VIEWS ─────────────────────────────────────────────────
@@ -1208,30 +1209,75 @@ Be specific, actionable, DCF-context-aware.`, 2000);
 // ── GMAIL LABELS ──────────────────────────────────────────
 async function applyLabels() {
   if (!Object.keys(triage).length) { showStatus('Run triage first'); return; }
-  showStatus('Creating Gmail labels...');
-  const defs = [
-    { name: 'ST/Must-Act', color: { backgroundColor: '#fb4c2f', textColor: '#ffffff' } },
-    { name: 'ST/DCF', color: { backgroundColor: '#4a86e8', textColor: '#ffffff' } },
-    { name: 'ST/Skim', color: { backgroundColor: '#ffad47', textColor: '#ffffff' } },
-    { name: 'ST/Ignore', color: { backgroundColor: '#999999', textColor: '#ffffff' } },
+  showStatus('Syncing labels to Gmail...');
+
+  const labelDefs = [
+    { name: 'Shivi-twin/Must-Act', color: { backgroundColor: '#fb4c2f', textColor: '#ffffff' } },
+    { name: 'Shivi-twin/DCF', color: { backgroundColor: '#4a86e8', textColor: '#ffffff' } },
+    { name: 'Shivi-twin/Skim', color: { backgroundColor: '#ffad47', textColor: '#ffffff' } },
+    { name: 'Shivi-twin/Ignore', color: { backgroundColor: '#999999', textColor: '#ffffff' } },
   ];
-  for (const ld of defs) {
-    try {
-      const r = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/labels', { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ name: ld.name, color: ld.color, labelListVisibility: 'labelShow', messageListVisibility: 'show' }) });
-      const d = await r.json(); if (d.id) gmailLabels[ld.name] = d.id;
-    } catch(e) {
-      const r = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/labels', { headers: { Authorization: `Bearer ${token}` } });
-      const d = await r.json();
-      const found = d.labels?.find(l => l.name === ld.name); if (found) gmailLabels[ld.name] = found.id;
+
+  // Step 1 — fetch all existing labels
+  let existingLabels = [];
+  try {
+    const r = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/labels', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const d = await r.json();
+    existingLabels = d.labels || [];
+  } catch(e) { showStatus('Error fetching Gmail labels'); return; }
+
+  // Step 2 — for each label def, use existing ID or create new
+  gmailLabels = {};
+  for (const ld of labelDefs) {
+    const existing = existingLabels.find(l => l.name === ld.name);
+    if (existing) {
+      gmailLabels[ld.name] = existing.id;
+    } else {
+      try {
+        const r = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/labels', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: ld.name, color: ld.color, labelListVisibility: 'labelShow', messageListVisibility: 'show' })
+        });
+        const d = await r.json();
+        if (d.id) gmailLabels[ld.name] = d.id;
+      } catch(e) {}
     }
   }
-  const pMap = { MUST_READ: 'ST/Must-Act', DCF: 'ST/DCF', SKIM: 'ST/Skim', IGNORE: 'ST/Ignore' };
+
+  // Step 3 — apply labels to triaged emails
+  const priorityToLabel = {
+    MUST_READ: 'Shivi-twin/Must-Act',
+    DCF: 'Shivi-twin/DCF',
+    SKIM: 'Shivi-twin/Skim',
+    IGNORE: 'Shivi-twin/Ignore'
+  };
+
   let applied = 0;
-  for (const [id, t] of Object.entries(triage)) {
-    const labelId = gmailLabels[pMap[t.priority]]; if (!labelId) continue;
-    try { await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${id}/modify`, { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ addLabelIds: [labelId] }) }); applied++; } catch(e) {}
+  const entries = Object.entries(triage);
+
+  for (let i = 0; i < entries.length; i++) {
+    const [msgId, t] = entries[i];
+    const labelName = priorityToLabel[t.priority];
+    const labelId = gmailLabels[labelName];
+    if (!labelId) continue;
+    try {
+      const r = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${msgId}/modify`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ addLabelIds: [labelId] })
+      });
+      if (r.ok) applied++;
+    } catch(e) {}
+
+    // Update status every 50 emails
+    if (i % 50 === 0) showStatus(`Labeling emails... ${i}/${entries.length}`);
   }
-  showStatus(`✓ Labeled ${applied} emails in Gmail`); setTimeout(hideStatus, 3000);
+
+  showStatus(`✓ Labeled ${applied} emails in Gmail under Shivi-twin/`);
+  setTimeout(hideStatus, 4000);
 }
 
 // ── SNOOZE ────────────────────────────────────────────────
