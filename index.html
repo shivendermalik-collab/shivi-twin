@@ -651,8 +651,7 @@ textarea:focus { border-color: var(--purple); }
       <div class="sidebar-section">
         <div class="sidebar-label">Command</div>
         <div class="nav-item active" onclick="setView('inbox', this)"><span class="nav-icon">📥</span>All Signals<span class="nav-count" id="nc-all">—</span></div>
-        <div class="nav-item" onclick="setView('briefing', this)"><span class="nav-icon">☀️</span>Morning Briefing</div>
-        <div class="nav-item" onclick="setView('digest', this)"><span class="nav-icon">📊</span>Daily Digest</div>
+        <div class="nav-item" onclick="showBriefing();setView('briefing',this)"><span class="nav-icon">☀️</span>Daily Briefing</div>
       </div>
       <div class="sidebar-divider"></div>
       <div class="sidebar-section">
@@ -690,11 +689,16 @@ textarea:focus { border-color: var(--purple); }
       <!-- Action bar -->
       <div class="action-bar">
         <button class="btn btn-orange" onclick="runTriage()">✦ Run Triage</button>
-        <button class="btn btn-purple" onclick="morningBriefing()">☀️ Morning Briefing</button>
-        <button class="btn btn-outline" onclick="loadEmails()">↻ Refresh</button>
-        <button class="btn btn-outline" onclick="showDigest()">📊 Digest</button>
-        <button class="btn btn-outline" onclick="applyLabels()">🏷️ Label Gmail</button>
-        <button class="btn btn-green" onclick="openSnooze()" style="margin-left:auto">⏰ Snooze</button>
+        <button class="btn btn-purple" onclick="showBriefing()">☀️ Daily Briefing</button>
+        <button class="btn btn-outline" onclick="loadEmails()" title="Refresh inbox">↻</button>
+        <div style="margin-left:auto;position:relative">
+          <button class="btn btn-outline" onclick="toggleOverflow()">··· More</button>
+          <div id="overflow-menu" style="display:none;position:absolute;right:0;top:36px;background:var(--white);border:1px solid var(--grey-200);border-radius:10px;box-shadow:var(--shadow-md);z-index:50;min-width:160px;padding:6px;">
+            <div onclick="applyLabels();toggleOverflow()" style="padding:8px 14px;font-size:11px;font-weight:600;cursor:pointer;border-radius:6px;color:var(--grey-800)" onmouseover="this.style.background='var(--grey-100)'" onmouseout="this.style.background='transparent'">🏷️ Label in Gmail</div>
+            <div onclick="openSnooze();toggleOverflow()" style="padding:8px 14px;font-size:11px;font-weight:600;cursor:pointer;border-radius:6px;color:var(--grey-800)" onmouseover="this.style.background='var(--grey-100)'" onmouseout="this.style.background='transparent'">⏰ Snooze selected</div>
+            <div onclick="clearTriageCache();toggleOverflow()" style="padding:8px 14px;font-size:11px;font-weight:600;cursor:pointer;border-radius:6px;color:var(--grey-800)" onmouseover="this.style.background='var(--grey-100)'" onmouseout="this.style.background='transparent'">🗑️ Clear triage cache</div>
+          </div>
+        </div>
       </div>
 
       <!-- Progress -->
@@ -711,17 +715,12 @@ textarea:focus { border-color: var(--purple); }
         <div class="stat-card s-green"><div class="stat-num" id="s-snoozed">—</div><div class="stat-label">Snoozed</div></div>
       </div>
 
-      <!-- Morning briefing panel -->
-      <div id="briefing-panel">
-        <div class="briefing-title">☀️ Morning Briefing</div>
+      <!-- Daily Briefing panel -->
+      <div id="briefing-panel" style="display:none">
+        <div class="briefing-title">☀️ Daily Briefing</div>
         <div class="briefing-summary" id="briefing-summary">Generating your briefing...</div>
         <div class="briefing-items" id="briefing-items"></div>
-      </div>
-
-      <!-- Digest panel -->
-      <div id="digest-panel">
-        <div class="digest-title">📊 Daily Digest</div>
-        <div class="claude-body" id="digest-body"><div class="loading"><div class="spinner"></div>Generating...</div></div>
+        <div class="claude-body" id="digest-body" style="margin-top:16px;padding-top:16px;border-top:1px solid rgba(255,255,255,0.15)"></div>
       </div>
 
       <!-- Message list -->
@@ -892,36 +891,83 @@ function signOut() {
   document.getElementById('app-screen').style.display = 'none';
 }
 
-// ── EMAILS ────────────────────────────────────────────────
+// ── EMAIL LOADING (500 with pagination) ──────────────────
 async function loadEmails() {
   showStatus('Fetching inbox...');
   try {
-    const r = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=50&labelIds=INBOX', { headers: { Authorization: `Bearer ${token}` } });
-    const d = await r.json();
-    if (!d.messages) { emails = []; renderList(); hideStatus(); return; }
-    emails = await Promise.all(d.messages.map(async m => {
-      const r = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${m.id}?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date`, { headers: { Authorization: `Bearer ${token}` } });
+    let allMessages = [];
+    let pageToken = null;
+
+    // Fetch up to 500 emails via pagination
+    while (allMessages.length < 500) {
+      const url = `https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=100&labelIds=INBOX${pageToken ? '&pageToken=' + pageToken : ''}`;
+      const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+      const d = await r.json();
+      if (!d.messages) break;
+      allMessages = allMessages.concat(d.messages);
+      pageToken = d.nextPageToken;
+      if (!pageToken) break;
+    }
+
+    if (!allMessages.length) { emails = []; renderList(); hideStatus(); return; }
+
+    // Fetch metadata only for emails not already in cache
+    const cached = emails.reduce((acc, e) => { acc[e.id] = e; return acc; }, {});
+    const toFetch = allMessages.filter(m => !cached[m.id]);
+
+    showStatus(`Loading ${toFetch.length} new emails (${allMessages.length - toFetch.length} cached)...`);
+
+    const newEmails = await Promise.all(toFetch.map(async m => {
+      const r = await fetch(
+        `https://gmail.googleapis.com/gmail/v1/users/me/messages/${m.id}?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
       return r.json();
     }));
-    renderList(); hideStatus();
+
+    // Merge: preserve order from Gmail, use cached where available
+    emails = allMessages.map(m => cached[m.id] || newEmails.find(e => e.id === m.id)).filter(Boolean);
+
+    renderList();
+    hideStatus();
+    showStatus(`✓ ${emails.length} emails loaded (${toFetch.length} new)`);
+    setTimeout(hideStatus, 2000);
   } catch(e) { showStatus('Error loading inbox'); }
 }
 
-// ── TRIAGE ────────────────────────────────────────────────
+// ── TRIAGE (smart cache) ──────────────────────────────────
 async function runTriage() {
   if (!emails.length) await loadEmails();
-  showProgress(0); showStatus('Claude is triaging your inbox...');
+  
+  // Only triage emails not already cached
+  const uncached = emails.filter(e => !triage[e.id]);
+  
+  if (!uncached.length) {
+    showStatus('✓ All emails already triaged — cache up to date');
+    setTimeout(hideStatus, 2000);
+    updateCounts(); renderList();
+    return;
+  }
 
-  const list = emails.map((e, i) => {
-    const h = e.payload?.headers || [];
-    const from = getH(h, 'From') || 'Unknown';
-    const subject = getH(h, 'Subject') || '(no subject)';
-    return `${i}|${e.id}|${from}|${subject}`;
-  }).join('\n');
+  showProgress(0);
+  showStatus(`Claude is triaging ${uncached.length} new emails (${emails.length - uncached.length} from cache)...`);
 
-  showProgress(20);
+  // Process in batches of 50 to avoid token limits
+  const BATCH = 50;
+  let processed = 0;
 
-  const res = await claude(`You are Shivender Malik's AI triage assistant. He leads DCF (Dealer Channel Finance) at CARS24/Loans24 — dealer-sourced used car loans.
+  for (let i = 0; i < uncached.length; i += BATCH) {
+    const batch = uncached.slice(i, i + BATCH);
+    const list = batch.map((e, idx) => {
+      const h = e.payload?.headers || [];
+      const from = getH(h, 'From') || 'Unknown';
+      const subject = getH(h, 'Subject') || '(no subject)';
+      return `${idx}|${e.id}|${from}|${subject}`;
+    }).join('\n');
+
+    showProgress(Math.round((i / uncached.length) * 80));
+
+    const res = await claude(`You are Shivender Malik's AI triage assistant. He leads DCF (Dealer Channel Finance) at CARS24/Loans24 — dealer-sourced used car loans.
 
 Triage each email. Output exactly: INDEX|ID|PRIORITY|REASON
 
@@ -938,27 +984,31 @@ ${list}
 
 Output ONLY the lines. No preamble.`, 4000);
 
-  showProgress(70);
-  triage = {};
-  res.split('\n').forEach(line => {
-    const p = line.split('|');
-    if (p.length >= 4) {
-      const id = p[1]?.trim();
-      const priority = p[2]?.trim();
-      const reason = p.slice(3).join('|').trim();
-      const validPriorities = ['MUST_READ', 'DCF', 'SKIM', 'IGNORE'];
-      if (id && validPriorities.includes(priority)) triage[id] = { priority, reason };
-    }
-  });
+    res.split('\n').forEach(line => {
+      const p = line.split('|');
+      if (p.length >= 4) {
+        const id = p[1]?.trim();
+        const priority = p[2]?.trim();
+        const reason = p.slice(3).join('|').trim();
+        const validPriorities = ['MUST_READ', 'DCF', 'SKIM', 'IGNORE'];
+        if (id && validPriorities.includes(priority)) triage[id] = { priority, reason };
+      }
+    });
 
-  // Default any unmatched emails to SKIM so all 50 always show
+    processed += batch.length;
+  }
+
+  // Default any still-unmatched to SKIM
   emails.forEach(e => {
     if (!triage[e.id]) triage[e.id] = { priority: 'SKIM', reason: 'Not analyzed' };
   });
 
+  // Save triage cache to localStorage
+  try { localStorage.setItem('st_triage', JSON.stringify(triage)); } catch(e) {}
+
   updateCounts(); renderList();
   showProgress(100); setTimeout(hideProgress, 400);
-  showStatus(`✓ Triage complete — ${Object.keys(triage).length} signals analyzed`);
+  showStatus(`✓ Triage complete — ${processed} new, ${emails.length} total`);
   setTimeout(hideStatus, 3000);
   generateStripAI();
 }
@@ -968,10 +1018,9 @@ function setView(view, el) {
   currentView = view;
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   if (el) el.classList.add('active');
-  document.getElementById('briefing-panel').style.display = 'none';
-  document.getElementById('digest-panel').style.display = 'none';
-  if (view === 'briefing') { morningBriefing(); return; }
-  if (view === 'digest') { showDigest(); return; }
+  hide('briefing-panel');
+  document.getElementById('message-list').style.display = 'flex';
+  if (view === 'briefing') { showBriefing(); return; }
   renderList();
 }
 
@@ -1108,40 +1157,19 @@ Reply body only.`);
   document.getElementById('draft-text').value = res;
 }
 
-async function morningBriefing() {
+async function showBriefing() {
   show('briefing-panel');
-  hide('digest-panel');
+  document.getElementById('message-list').style.display = 'none';
+  hide('detail-panel'); hide('claude-panel'); hide('draft-panel');
   document.getElementById('briefing-summary').textContent = 'Generating your briefing...';
   document.getElementById('briefing-items').innerHTML = '';
+  document.getElementById('digest-body').innerHTML = '<div class="loading"><div class="spinner"></div>Analyzing inbox...</div>';
+
   if (!emails.length) await loadEmails();
 
-  const mustCount = Object.values(triage).filter(t => t.priority === 'MUST_READ').length;
-  const dcfCount = Object.values(triage).filter(t => t.priority === 'DCF').length;
-  const followCount = Object.keys(followUps).length;
-  const snoozedCount = Object.keys(snoozed).filter(id => snoozed[id].until > Date.now()).length;
-
-  const summary = emails.slice(0, 20).map(e => {
-    const h = e.payload?.headers || [];
-    const t = triage[e.id];
-    return `[${t?.priority || '?'}] ${getH(h,'From')||'?'} — ${getH(h,'Subject')||'?'}`;
-  }).join('\n');
-
-  const res = await claude(`Generate a 2-sentence morning briefing for Shivender Malik, DCF head at CARS24/Loans24.
-Stats: ${mustCount} must-act, ${dcfCount} DCF, ${followCount} follow-ups pending, ${snoozedCount} snoozed.
-Top emails: ${summary}
-Be direct, specific, energizing. Reference what actually matters today.`);
-
-  document.getElementById('briefing-summary').textContent = res;
-  document.getElementById('briefing-items').innerHTML = `
-    <div class="briefing-item"><div class="briefing-item-label">Must Act</div><div class="briefing-item-val">${mustCount}</div></div>
-    <div class="briefing-item"><div class="briefing-item-label">DCF Signals</div><div class="briefing-item-val">${dcfCount}</div></div>
-    <div class="briefing-item"><div class="briefing-item-label">Follow-ups</div><div class="briefing-item-val">${followCount}</div></div>`;
-}
-
-async function showDigest() {
-  show('digest-panel'); hide('briefing-panel');
-  document.getElementById('digest-body').innerHTML = '<div class="loading"><div class="spinner"></div>Generating digest...</div>';
-  if (!emails.length) await loadEmails();
+  const must = Object.values(triage).filter(t => t.priority === 'MUST_READ').length;
+  const dcf = Object.values(triage).filter(t => t.priority === 'DCF').length;
+  const fu = Object.keys(followUps).length;
 
   const summary = emails.slice(0, 30).map(e => {
     const h = e.payload?.headers || [];
@@ -1149,19 +1177,32 @@ async function showDigest() {
     return `[${t?.priority||'?'}] From: ${getH(h,'From')||'?'} | ${getH(h,'Subject')||'?'}`;
   }).join('\n');
 
-  const res = await claude(`Daily email digest for Shivender Malik (DCF head, CARS24/Loans24).
+  const res = await claude(`Daily briefing for Shivender Malik, DCF head at CARS24/Loans24.
 
-Format:
-## 🔴 Must Act Today
-## 💜 DCF Updates  
-## 📌 Follow-ups Pending
-## 📊 Inbox Overview
+Write in two parts separated by "---DIGEST---":
+
+PART 1: One punchy sentence (max 15 words) on what needs attention today.
+
+---DIGEST---
+
+PART 2: Structured digest:
+## 🔴 Must Act Today (${must} items)
+## 💜 DCF Updates (${dcf} signals)
+## 📌 Follow-ups Pending (${fu} items)
 ## ✦ Recommendation
 
-Emails: ${summary}
+Inbox (${emails.length} emails):
+${summary}
 
-Be concise, actionable, DCF-context-aware.`);
-  document.getElementById('digest-body').textContent = res;
+Be specific, actionable, DCF-context-aware.`, 2000);
+
+  const parts = res.split('---DIGEST---');
+  document.getElementById('briefing-summary').textContent = (parts[0]||res).replace('PART 1:','').trim();
+  document.getElementById('briefing-items').innerHTML = `
+    <div class="briefing-item"><div class="briefing-item-label">Must Act</div><div class="briefing-item-val">${must}</div></div>
+    <div class="briefing-item"><div class="briefing-item-label">DCF Signals</div><div class="briefing-item-val">${dcf}</div></div>
+    <div class="briefing-item"><div class="briefing-item-label">Follow-ups</div><div class="briefing-item-val">${fu}</div></div>`;
+  document.getElementById('digest-body').textContent = parts[1]?.replace('PART 2:','').trim() || '';
 }
 
 // ── GMAIL LABELS ──────────────────────────────────────────
@@ -1288,11 +1329,36 @@ function hideProgress() { document.getElementById('progress-wrap').style.display
 function show(id) { document.getElementById(id).style.display='block'; }
 function hide(id) { document.getElementById(id).style.display='none'; }
 
-function saveState() { sessionStorage.setItem('st_snoozed', JSON.stringify(snoozed)); sessionStorage.setItem('st_followups', JSON.stringify(followUps)); }
+function saveState() { 
+  sessionStorage.setItem('st_snoozed', JSON.stringify(snoozed)); 
+  sessionStorage.setItem('st_followups', JSON.stringify(followUps)); 
+}
 function loadState() {
   try { snoozed = JSON.parse(sessionStorage.getItem('st_snoozed')||'{}'); } catch(e) { snoozed={}; }
   try { followUps = JSON.parse(sessionStorage.getItem('st_followups')||'{}'); } catch(e) { followUps={}; }
+  try { triage = JSON.parse(localStorage.getItem('st_triage')||'{}'); } catch(e) { triage={}; }
 }
+
+function clearTriageCache() {
+  triage = {};
+  try { localStorage.removeItem('st_triage'); } catch(e) {}
+  updateCounts(); renderList();
+  showStatus('✓ Triage cache cleared — run triage to re-analyze');
+  setTimeout(hideStatus, 3000);
+}
+
+function toggleOverflow() {
+  const m = document.getElementById('overflow-menu');
+  m.style.display = m.style.display === 'none' ? 'block' : 'none';
+}
+
+// Close overflow when clicking outside
+document.addEventListener('click', e => {
+  const menu = document.getElementById('overflow-menu');
+  if (menu && !menu.contains(e.target) && !e.target.closest('[onclick="toggleOverflow()"]')) {
+    menu.style.display = 'none';
+  }
+});
 
 checkAuth();
 </script>
