@@ -390,7 +390,7 @@ body {
   display: none;
 }
 .claude-header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; font-size: 11px; font-weight: 800; color: var(--purple); text-transform: uppercase; letter-spacing: 1.5px; }
-.claude-body { font-size: 12px; line-height: 1.8; color: var(--grey-800); white-space: pre-wrap; }
+.claude-body { font-size: 12px; line-height: 1.8; color: rgba(255,255,255,0.9); white-space: pre-wrap; }
 
 /* Draft panel */
 #draft-panel { background: var(--white); border: 1px solid var(--grey-200); border-radius: 14px; padding: 18px 20px; margin-bottom: 12px; display: none; box-shadow: var(--shadow-sm); }
@@ -408,8 +408,8 @@ textarea:focus { border-color: var(--purple); }
 .briefing-summary { font-size: 13px; font-weight: 600; line-height: 1.6; margin-bottom: 14px; }
 .briefing-items { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
 .briefing-item { background: rgba(255,255,255,0.1); border-radius: 10px; padding: 10px 12px; border-left: 3px solid var(--orange); }
-.briefing-item-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; opacity: 0.6; margin-bottom: 4px; }
-.briefing-item-val { font-size: 13px; font-weight: 700; }
+.briefing-item-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; opacity: 0.6; margin-bottom: 4px; color: var(--white); }
+.briefing-item-val { font-size: 13px; font-weight: 700; color: var(--white); }
 
 /* Coming soon channels */
 .coming-soon-strip { background: var(--white); border: 1px solid var(--grey-200); border-radius: 14px; padding: 16px 20px; margin-bottom: 16px; box-shadow: var(--shadow-sm); }
@@ -821,7 +821,7 @@ async function showApp() {
     document.getElementById('user-tag').textContent = d.email || '';
   } catch(e) {}
   setStripDate();
-  await loadEmails();
+  await loadEmails(50); // Fast initial load — 50 emails
   startCountdown();
   generateStripAI();
 }
@@ -892,10 +892,7 @@ function signOut() {
 }
 
 // ── EMAIL LOADING ─────────────────────────────────────────
-async function loadEmails() {
-  // Show progress bar immediately
-  document.getElementById('progress-wrap').style.display = 'block';
-  document.getElementById('progress-bar').style.width = '5%';
+async function loadEmails(maxEmails = 50) {
   document.getElementById('status-bar').style.display = 'block';
   document.getElementById('status-bar').textContent = 'Fetching inbox...';
 
@@ -903,9 +900,9 @@ async function loadEmails() {
     let allMessages = [];
     let pageToken = null;
 
-    // Fetch up to 500 email IDs
-    while (allMessages.length < 500) {
-      const url = `https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=100&labelIds=INBOX${pageToken ? '&pageToken=' + pageToken : ''}`;
+    while (allMessages.length < maxEmails) {
+      const fetchCount = Math.min(100, maxEmails - allMessages.length);
+      const url = `https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=${fetchCount}&labelIds=INBOX${pageToken ? '&pageToken=' + pageToken : ''}`;
       const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
       const d = await r.json();
       if (!d.messages) break;
@@ -914,66 +911,40 @@ async function loadEmails() {
       if (!pageToken) break;
     }
 
-    if (!allMessages.length) {
-      emails = []; renderList();
-      document.getElementById('progress-wrap').style.display = 'none';
-      document.getElementById('status-bar').style.display = 'none';
-      return;
-    }
+    if (!allMessages.length) { emails = []; renderList(); document.getElementById('status-bar').style.display = 'none'; return; }
 
-    // Use cache for already-fetched emails
     const cached = emails.reduce((acc, e) => { acc[e.id] = e; return acc; }, {});
     const toFetch = allMessages.filter(m => !cached[m.id]);
 
-    document.getElementById('status-bar').textContent = `Loading ${toFetch.length} new emails (${allMessages.length - toFetch.length} cached)...`;
+    // Fetch all metadata in parallel - no artificial delays
+    const newEmails = await Promise.all(toFetch.map(async m => {
+      try {
+        const r = await fetch(
+          `https://gmail.googleapis.com/gmail/v1/users/me/messages/${m.id}?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        return r.json();
+      } catch(e) { return null; }
+    }));
 
-    // Fetch in batches of 5 with progress updates
-    const BATCH = 5;
-    const newEmails = [];
-
-    for (let i = 0; i < toFetch.length; i += BATCH) {
-      const batch = toFetch.slice(i, i + BATCH);
-      const results = await Promise.all(batch.map(async m => {
-        try {
-          const r = await fetch(
-            `https://gmail.googleapis.com/gmail/v1/users/me/messages/${m.id}?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date`,
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
-          return r.json();
-        } catch(e) { return null; }
-      }));
-      results.filter(Boolean).forEach(e => newEmails.push(e));
-
-      // Update progress
-      const pct = 5 + Math.round(((i + BATCH) / toFetch.length) * 85);
-      document.getElementById('progress-bar').style.width = Math.min(pct, 90) + '%';
-      document.getElementById('status-bar').textContent = `Loading... ${Math.min(i + BATCH, toFetch.length)} of ${toFetch.length} emails`;
-      
-      // Small pause to avoid rate limits
-      await new Promise(resolve => setTimeout(resolve, 50));
-    }
-
-    // Merge preserving Gmail order
     emails = allMessages.map(m => cached[m.id] || newEmails.find(e => e?.id === m.id)).filter(Boolean);
-
-    document.getElementById('progress-bar').style.width = '100%';
-    document.getElementById('status-bar').textContent = `✓ ${emails.length} emails loaded`;
-    setTimeout(() => {
-      document.getElementById('progress-wrap').style.display = 'none';
-      document.getElementById('status-bar').style.display = 'none';
-    }, 1500);
-
     renderList();
+    document.getElementById('status-bar').textContent = `✓ ${emails.length} emails loaded`;
+    setTimeout(() => { document.getElementById('status-bar').style.display = 'none'; }, 1500);
   } catch(e) {
-    document.getElementById('status-bar').textContent = 'Error loading inbox — please sign out and sign in again';
-    document.getElementById('progress-wrap').style.display = 'none';
+    document.getElementById('status-bar').textContent = 'Error loading inbox';
   }
 }
 
 // ── TRIAGE (smart cache) ──────────────────────────────────
 async function runTriage() {
-  if (!emails.length) await loadEmails();
-  
+  // First expand to 500 emails if we only have 50
+  if (emails.length <= 50) {
+    document.getElementById('status-bar').style.display = 'block';
+    document.getElementById('status-bar').textContent = 'Expanding to 500 emails...';
+    await loadEmails(500);
+  }
+
   // Only triage emails not already cached
   const uncached = emails.filter(e => !triage[e.id]);
   
@@ -1244,7 +1215,14 @@ Be specific, actionable, DCF-context-aware.`, 2000);
 // ── GMAIL LABELS ──────────────────────────────────────────
 async function applyLabels() {
   if (!Object.keys(triage).length) { showStatus('Run triage first'); return; }
-  showStatus('Syncing labels to Gmail...');
+
+  // Skip already-labeled emails using localStorage cache
+  let labeled = {};
+  try { labeled = JSON.parse(localStorage.getItem('st_labeled') || '{}'); } catch(e) {}
+  const toLabel = Object.entries(triage).filter(([id]) => !labeled[id]);
+  if (!toLabel.length) { showStatus('✓ All emails already labeled'); setTimeout(hideStatus, 2000); return; }
+
+  showStatus(`Syncing ${toLabel.length} new labels to Gmail...`);
 
   const labelDefs = [
     { name: 'Shivi-twin/Must-Act', color: { backgroundColor: '#fb4c2f', textColor: '#ffffff' } },
@@ -1253,21 +1231,17 @@ async function applyLabels() {
     { name: 'Shivi-twin/Ignore', color: { backgroundColor: '#999999', textColor: '#ffffff' } },
   ];
 
-  // Step 1 — fetch all existing labels
+  // Fetch existing labels
   gmailLabels = {};
   try {
-    const r = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/labels', {
-      headers: { Authorization: `Bearer ${token}` }
-    });
+    const r = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/labels', { headers: { Authorization: `Bearer ${token}` } });
     const d = await r.json();
-    const existing = d.labels || [];
-    // Map existing labels by name
-    existing.forEach(l => { gmailLabels[l.name] = l.id; });
+    (d.labels || []).forEach(l => { gmailLabels[l.name] = l.id; });
   } catch(e) { showStatus('Error fetching Gmail labels'); return; }
 
-  // Step 2 — create only missing labels
+  // Create only missing labels
   for (const ld of labelDefs) {
-    if (gmailLabels[ld.name]) continue; // Already exists, skip
+    if (gmailLabels[ld.name]) continue;
     try {
       const r = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/labels', {
         method: 'POST',
@@ -1279,41 +1253,31 @@ async function applyLabels() {
     } catch(e) {}
   }
 
-  // Step 3 — apply labels in batches with rate limiting
-  const priorityToLabel = {
-    MUST_READ: 'Shivi-twin/Must-Act',
-    DCF: 'Shivi-twin/DCF',
-    SKIM: 'Shivi-twin/Skim',
-    IGNORE: 'Shivi-twin/Ignore'
-  };
-
+  const priorityToLabel = { MUST_READ: 'Shivi-twin/Must-Act', DCF: 'Shivi-twin/DCF', SKIM: 'Shivi-twin/Skim', IGNORE: 'Shivi-twin/Ignore' };
   let applied = 0;
-  const entries = Object.entries(triage);
 
-  for (let i = 0; i < entries.length; i++) {
-    const [msgId, t] = entries[i];
-    const labelName = priorityToLabel[t.priority];
-    const labelId = gmailLabels[labelName];
-    if (!labelId) continue;
-
-    try {
-      const r = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${msgId}/modify`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ addLabelIds: [labelId] })
-      });
-      if (r.ok) applied++;
-    } catch(e) {}
-
-    // Rate limit: pause every 10 requests
-    if (i > 0 && i % 10 === 0) {
-      showStatus(`Labeling... ${i}/${entries.length}`);
-      await new Promise(r => setTimeout(r, 200));
-    }
+  // Apply in parallel batches of 20
+  for (let i = 0; i < toLabel.length; i += 20) {
+    const batch = toLabel.slice(i, i + 20);
+    await Promise.all(batch.map(async ([msgId, t]) => {
+      const labelId = gmailLabels[priorityToLabel[t.priority]];
+      if (!labelId) return;
+      try {
+        const r = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${msgId}/modify`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ addLabelIds: [labelId] })
+        });
+        if (r.ok) { applied++; labeled[msgId] = true; }
+      } catch(e) {}
+    }));
+    showStatus(`Labeling... ${Math.min(i + 20, toLabel.length)}/${toLabel.length}`);
   }
 
-  showStatus(`✓ Labeled ${applied}/${entries.length} emails in Gmail`);
-  setTimeout(hideStatus, 4000);
+  // Save labeled cache
+  try { localStorage.setItem('st_labeled', JSON.stringify(labeled)); } catch(e) {}
+  showStatus(`✓ Labeled ${applied} new emails in Gmail`);
+  setTimeout(hideStatus, 3000);
 }
 
 // ── SNOOZE ────────────────────────────────────────────────
@@ -1423,7 +1387,7 @@ function loadState() {
 
 function clearTriageCache() {
   triage = {};
-  try { localStorage.removeItem('st_triage'); } catch(e) {}
+  try { localStorage.removeItem('st_triage'); localStorage.removeItem('st_labeled'); } catch(e) {}
   updateCounts(); renderList();
   showStatus('✓ Triage cache cleared — run triage to re-analyze');
   setTimeout(hideStatus, 3000);
