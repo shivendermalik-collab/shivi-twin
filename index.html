@@ -1536,7 +1536,7 @@ function showMIS() {
 async function fetchSheetTabs() {
   const url = document.getElementById('mis-sheet-url').value.trim();
   if (!url) return;
-  const idMatch = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+  const idMatch = url.match(/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
   if (!idMatch) { misStatus('Invalid Google Sheets URL'); return; }
   misStatus('Fetching sheet tabs...');
   try {
@@ -1568,7 +1568,7 @@ async function loadMIS() {
   misLoading = true;
   const url = document.getElementById('mis-sheet-url').value.trim();
   if (!url) { misLoading = false; return; }
-  const idMatch = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+  const idMatch = url.match(/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
   if (!idMatch) { misStatus('Invalid Google Sheets URL'); misLoading = false; return; }
 
   document.getElementById('mis-empty').style.display = 'none';
