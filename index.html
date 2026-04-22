@@ -891,14 +891,15 @@ function signOut() {
   document.getElementById('app-screen').style.display = 'none';
 }
 
-// ── EMAIL LOADING (500 with pagination) ──────────────────
+// ── EMAIL LOADING (500 with concurrency control) ──────────
 async function loadEmails() {
   showStatus('Fetching inbox...');
+  showProgress(0);
   try {
     let allMessages = [];
     let pageToken = null;
 
-    // Fetch up to 500 emails via pagination
+    // Fetch up to 500 email IDs via pagination
     while (allMessages.length < 500) {
       const url = `https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=100&labelIds=INBOX${pageToken ? '&pageToken=' + pageToken : ''}`;
       const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
@@ -909,37 +910,42 @@ async function loadEmails() {
       if (!pageToken) break;
     }
 
-    if (!allMessages.length) { emails = []; renderList(); hideStatus(); return; }
+    if (!allMessages.length) { emails = []; renderList(); hideStatus(); hideProgress(); return; }
 
-    // Fetch metadata only for emails not already in cache
+    // Check cache
     const cached = emails.reduce((acc, e) => { acc[e.id] = e; return acc; }, {});
     const toFetch = allMessages.filter(m => !cached[m.id]);
 
     showStatus(`Loading ${toFetch.length} new emails (${allMessages.length - toFetch.length} cached)...`);
 
+    // Fetch metadata with concurrency of 10
+    const CONCURRENCY = 10;
     const newEmails = [];
-    for (let i = 0; i < toFetch.length; i++) {
-      const m = toFetch[i];
-      try {
-        const r = await fetch(
-          `https://gmail.googleapis.com/gmail/v1/users/me/messages/${m.id}?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        const d = await r.json();
-        newEmails.push(d);
-      } catch(e) {}
-      // Rate limit: pause every 20 requests
-      if (i > 0 && i % 20 === 0) await new Promise(r => setTimeout(r, 100));
+    for (let i = 0; i < toFetch.length; i += CONCURRENCY) {
+      const batch = toFetch.slice(i, i + CONCURRENCY);
+      const results = await Promise.all(batch.map(async m => {
+        try {
+          const r = await fetch(
+            `https://gmail.googleapis.com/gmail/v1/users/me/messages/${m.id}?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date`,
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          return r.json();
+        } catch(e) { return null; }
+      }));
+      results.filter(Boolean).forEach(e => newEmails.push(e));
+      showProgress(Math.round(((i + CONCURRENCY) / toFetch.length) * 90));
+      showStatus(`Loading emails... ${Math.min(i + CONCURRENCY, toFetch.length)}/${toFetch.length}`);
     }
 
-    // Merge: preserve order from Gmail, use cached where available
-    emails = allMessages.map(m => cached[m.id] || newEmails.find(e => e.id === m.id)).filter(Boolean);
+    // Merge preserving Gmail order
+    emails = allMessages.map(m => cached[m.id] || newEmails.find(e => e?.id === m.id)).filter(Boolean);
 
+    showProgress(100);
+    setTimeout(hideProgress, 400);
     renderList();
-    hideStatus();
-    showStatus(`✓ ${emails.length} emails loaded (${toFetch.length} new)`);
+    showStatus(`✓ ${emails.length} emails loaded (${toFetch.length} new, ${allMessages.length - toFetch.length} cached)`);
     setTimeout(hideStatus, 2000);
-  } catch(e) { showStatus('Error loading inbox'); }
+  } catch(e) { showStatus('Error loading inbox'); hideProgress(); }
 }
 
 // ── TRIAGE (smart cache) ──────────────────────────────────
