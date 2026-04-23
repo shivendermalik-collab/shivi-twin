@@ -451,6 +451,24 @@ async function showApp() {
   }
 }
 
+function reloadMIS() {
+  // Clear cache and reload
+  sessionStorage.removeItem('st_mis_data');
+  misData = []; misLoaded = false;
+  // Remove loaded bar if present
+  document.querySelectorAll('[data-mis-bar]').forEach(el => el.remove());
+  loadMISData();
+}
+
+function changeMISSheet() {
+  sessionStorage.removeItem('st_mis_data');
+  sessionStorage.removeItem('st_sheet_id');
+  sessionStorage.removeItem('st_sheet_tab');
+  SHEET_ID = ''; SHEET_TAB = '';
+  misData = []; misLoaded = false;
+  showMISLoadPrompt();
+}
+
 function signOut() {
   sessionStorage.removeItem('st_v4');
   sessionStorage.removeItem('st_mis_data');
@@ -704,16 +722,35 @@ async function loadMISData() {
     if (!headers.length) { setMISStatus('No headers found'); return; }
 
     const BATCH = 1000;
-    let allRows = [], startRow = 2, batchNum = 0;
+    let allRows = [], startRow = 2, batchNum = 0, retries = 0;
     while (true) {
       batchNum++;
-      setMISStatus('Loading batch ' + batchNum + ' (' + allRows.length + ' rows)...');
-      const dRes = await fetch('https://sheets.googleapis.com/v4/spreadsheets/' + SHEET_ID + '/values/' + encodeURIComponent(SHEET_TAB) + '!A' + startRow + ':BJ' + (startRow + BATCH - 1), { headers: { Authorization: 'Bearer ' + token } });
-      const dData = await dRes.json();
-      if (dData.error || !dData.values || !dData.values.length) break;
+      setMISStatus('Loading rows ' + startRow.toLocaleString() + '–' + (startRow + BATCH - 1).toLocaleString() + ' · ' + allRows.length.toLocaleString() + ' loaded...');
+      let dData;
+      try {
+        const dRes = await fetch('https://sheets.googleapis.com/v4/spreadsheets/' + SHEET_ID + '/values/' + encodeURIComponent(SHEET_TAB) + '!A' + startRow + ':BJ' + (startRow + BATCH - 1), { headers: { Authorization: 'Bearer ' + token } });
+        dData = await dRes.json();
+      } catch(fetchErr) {
+        if (retries < 2) { retries++; await new Promise(r => setTimeout(r, 1500)); continue; }
+        break;
+      }
+      if (dData.error) {
+        if (dData.error.code === 503 && retries < 3) {
+          retries++;
+          setMISStatus('Throttled — retrying batch ' + batchNum + '...');
+          await new Promise(r => setTimeout(r, 2000 * retries));
+          continue;
+        }
+        if (dData.error.code === 401) { setMISStatus('Auth error — sign out and sign in again'); return; }
+        break;
+      }
+      retries = 0;
+      if (!dData.values || !dData.values.length) break;
       allRows = allRows.concat(dData.values);
       if (dData.values.length < BATCH) break;
       startRow += BATCH;
+      // Small pause to avoid throttling
+      await new Promise(r => setTimeout(r, 200));
     }
 
     misData = allRows.map(function(row) {
@@ -727,6 +764,16 @@ async function loadMISData() {
     renderBizNumbers();
     renderAlerts();
     renderMISView();
+    // Replace connect strip with loaded state + reload button
+    const strip = document.getElementById('biz-strip');
+    if (strip) {
+      const loadedBar = document.createElement('div');
+      loadedBar.style.cssText = 'grid-column:1/-1;display:flex;align-items:center;gap:8px;padding:6px 0 10px;font-size:10px;color:var(--g400);font-weight:600';
+      loadedBar.innerHTML = '<span style="color:var(--green)">✓ ' + misData.length.toLocaleString() + ' rows loaded from ' + SHEET_TAB + '</span>' +
+        '<button class="btn btn-outline btn-sm" onclick="reloadMIS()" style="margin-left:auto">↻ Reload Sheet</button>' +
+        '<button class="btn btn-outline btn-sm" onclick="changeMISSheet()">✎ Change Sheet</button>';
+      strip.insertAdjacentElement('beforebegin', loadedBar);
+    }
   } catch(e) { setMISStatus('Error: ' + e.message); }
 }
 
