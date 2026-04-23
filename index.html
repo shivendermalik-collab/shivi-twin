@@ -443,7 +443,22 @@ async function showApp() {
       SHEET_ID = sessionStorage.getItem('st_sheet_id') || '';
       SHEET_TAB = sessionStorage.getItem('st_sheet_tab') || '';
       misData = JSON.parse(cachedMIS);
-      misLoaded = true;
+      // Debug: log sample row to check date formats
+  if (misData.length > 0) {
+    const sample = misData[0];
+    console.log('[MIS Debug] Sample row dates:', {
+      LEAD_CREATION_DATE: sample['LEAD_CREATION_DATE'],
+      LOGIN_DATE: sample['LOGIN_DATE'],
+      APPROVAL_DATE: sample['APPROVAL_DATE'],
+      DISBURSAL_DATE: sample['DISBURSAL_DATE'],
+      LOAN_SANCTION: sample['LOAN_SANCTION']
+    });
+    // Find first row with a disbursal date
+    const withDisb = misData.find(r => r['DISBURSAL_DATE'] && r['DISBURSAL_DATE'] !== '');
+    if (withDisb) console.log('[MIS Debug] First disbursal row:', withDisb['DISBURSAL_DATE'], '-> parsed:', parseD(withDisb['DISBURSAL_DATE']));
+    else console.log('[MIS Debug] No DISBURSAL_DATE found in data!');
+  }
+  misLoaded = true;
       computeMISMetrics();
       renderBizNumbers();
       renderAlerts();
