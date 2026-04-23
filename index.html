@@ -403,7 +403,7 @@ const TEAMMATES = [
 const DCF_KW = ['dcf','dealer','loan','disbursal','miles','cars24','saarathi','nbfc','pmax','cibil','ujjwal','sambhav','jithin','parul','rishi','kushagra','divey','aakash','vraj','mukund','kirti','loans24','lender','rc limit','kuwy','sarvdhan','rto','payment memo'];
 
 let token = null, emails = [], triage = {}, snoozed = {}, followUps = {}, currentEmail = null;
-let misData = [], misLoaded = false, nextTriage = null, countdownInt = null;
+let misData = [], misLoaded = false, isLoadingMIS = false, nextTriage = null, countdownInt = null;
 let selectedTeammates = [], shareVia = 'email';
 let misMetrics = {};
 
@@ -677,15 +677,15 @@ function showMISLoadPrompt() {
 }
 
 async function fetchMISTabs() {
-  const urlInput = document.getElementById('mis-url-input');
-  if (!urlInput) return;
-  const url = urlInput.value.trim();
+  const urlEl = document.getElementById('mis-url-input');
+  if (!urlEl) return;
+  const url = urlEl.value.trim();
+  if (!url) return;
   const idMatch = url.match(/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
-  if (!idMatch) { setStatus('Invalid Google Sheets URL'); setTimeout(hideStatus, 2000); return; }
-  SHEET_ID = idMatch[1];
+  if (!idMatch) { setStatus('Invalid Google Sheets URL'); setTimeout(hideStatus,2000); return; }
   setStatus('Fetching tabs...');
   try {
-    const res = await fetch('https://sheets.googleapis.com/v4/spreadsheets/' + SHEET_ID + '?fields=sheets.properties', { headers: { Authorization: 'Bearer ' + token } });
+    const res = await fetch('https://sheets.googleapis.com/v4/spreadsheets/' + idMatch[1] + '?fields=sheets.properties', { headers: { Authorization: 'Bearer ' + token } });
     const meta = await res.json();
     if (meta.error) { setStatus('Auth error — sign out and sign in again'); return; }
     const sel = document.getElementById('mis-tab-select');
@@ -695,7 +695,6 @@ async function fetchMISTabs() {
       const o = document.createElement('option');
       o.value = s.properties.title;
       o.textContent = s.properties.title;
-      // Pre-select tab matching GID in URL
       const gidMatch = url.match(/gid=(\d+)/);
       if (gidMatch && String(s.properties.sheetId) === String(gidMatch[1])) o.selected = true;
       sel.appendChild(o);
@@ -705,91 +704,127 @@ async function fetchMISTabs() {
   } catch(e) { setStatus('Error: ' + e.message); }
 }
 
-// ── MIS DATA ─────────────────────────────────────────────
 async function loadMISData() {
-  // Resolve sheet ID and tab from inputs if not already set
-  const urlInput = document.getElementById('mis-url-input');
-  if (urlInput) {
-    const url = urlInput.value.trim();
-    const idMatch = url.match(/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
-    if (idMatch) SHEET_ID = idMatch[1];
-  }
+  if (isLoadingMIS) return;
+
+  // Read sheet URL and tab directly from DOM
+  const urlEl = document.getElementById('mis-url-input');
   const tabSel = document.getElementById('mis-tab-select');
-  if (tabSel && tabSel.value) SHEET_TAB = tabSel.value;
-  // Also try saved values from session
-  if (!SHEET_ID) { const s = sessionStorage.getItem('st_sheet_id'); if (s) SHEET_ID = s; }
-  if (!SHEET_TAB) { const s = sessionStorage.getItem('st_sheet_tab'); if (s) SHEET_TAB = s; }
-  if (!SHEET_ID || !SHEET_TAB) { setStatus('Please paste a sheet URL and select a tab first'); setTimeout(hideStatus, 3000); return; }
-  // Save for session restore
-  sessionStorage.setItem('st_sheet_id', SHEET_ID);
-  sessionStorage.setItem('st_sheet_tab', SHEET_TAB);
+  const url = urlEl ? urlEl.value.trim() : '';
+  const idMatch = url.match(/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+
+  // If no URL input visible, try session cache values
+  const sheetId = idMatch ? idMatch[1] : sessionStorage.getItem('st_sheet_id') || '';
+  const tabName = (tabSel && tabSel.value) ? tabSel.value : sessionStorage.getItem('st_sheet_tab') || '';
+
+  if (!sheetId || !tabName) {
+    setStatus('Please paste a sheet URL and select a tab first');
+    setTimeout(hideStatus, 3000);
+    return;
+  }
+
+  isLoadingMIS = true;
+  // Disable load buttons
+  document.querySelectorAll('button[onclick*="loadMISData"]').forEach(b => { b.disabled = true; b.style.opacity = '0.5'; });
 
   document.getElementById('mis-loading').style.display = 'block';
-  setMISStatus('Loading MIS data...');
-  try {
-    const hRes = await fetch('https://sheets.googleapis.com/v4/spreadsheets/' + SHEET_ID + '/values/' + encodeURIComponent(SHEET_TAB) + '!1:1', { headers: { Authorization: 'Bearer ' + token } });
-    const hData = await hRes.json();
-    if (hData.error) { setMISStatus('MIS auth error — sign out and sign back in'); return; }
-    const headers = hData.values ? hData.values[0] : [];
-    if (!headers.length) { setMISStatus('No headers found'); return; }
+  setMISStatus('Reading headers from ' + tabName + '...');
 
+  try {
+    // Save for session restore
+    sessionStorage.setItem('st_sheet_id', sheetId);
+    sessionStorage.setItem('st_sheet_tab', tabName);
+
+    // Fetch header row
+    const hRes = await fetch('https://sheets.googleapis.com/v4/spreadsheets/' + sheetId + '/values/' + encodeURIComponent(tabName) + '!1:1', { headers: { Authorization: 'Bearer ' + token } });
+    const hData = await hRes.json();
+    if (hData.error) {
+      setMISStatus(hData.error.status === 'UNAUTHENTICATED' ? 'Auth error — sign out and sign in again' : hData.error.message);
+      isLoadingMIS = false;
+      document.querySelectorAll('button[onclick*="loadMISData"]').forEach(b => { b.disabled = false; b.style.opacity = '1'; });
+      return;
+    }
+    const headers = hData.values ? hData.values[0] : [];
+    if (!headers.length) {
+      setMISStatus('No headers found in ' + tabName);
+      isLoadingMIS = false;
+      document.querySelectorAll('button[onclick*="loadMISData"]').forEach(b => { b.disabled = false; b.style.opacity = '1'; });
+      return;
+    }
+
+    // Batch load rows — same as v3
     const BATCH = 3000;
-    let allRows = [], startRow = 2, batchNum = 0, retries = 0;
+    let allRows = [], startRow = 2, batchNum = 0;
+
     while (true) {
       batchNum++;
-      setMISStatus('Loading rows ' + startRow.toLocaleString() + '–' + (startRow + BATCH - 1).toLocaleString() + ' · ' + allRows.length.toLocaleString() + ' loaded...');
-      let dData;
-      try {
-        const dRes = await fetch('https://sheets.googleapis.com/v4/spreadsheets/' + SHEET_ID + '/values/' + encodeURIComponent(SHEET_TAB) + '!A' + startRow + ':BJ' + (startRow + BATCH - 1), { headers: { Authorization: 'Bearer ' + token } });
-        dData = await dRes.json();
-      } catch(fetchErr) {
-        if (retries < 2) { retries++; await new Promise(r => setTimeout(r, 1500)); continue; }
-        break;
-      }
+      const endRow = startRow + BATCH - 1;
+      setMISStatus('Loading batch ' + batchNum + ' (rows ' + startRow + '–' + endRow + ')... ' + allRows.length + ' loaded');
+
+      const dRes = await fetch(
+        'https://sheets.googleapis.com/v4/spreadsheets/' + sheetId + '/values/' + encodeURIComponent(tabName) + '!A' + startRow + ':BJ' + endRow,
+        { headers: { Authorization: 'Bearer ' + token } }
+      );
+      const dData = await dRes.json();
+
       if (dData.error) {
-        if (dData.error.code === 503 && retries < 3) {
-          retries++;
-          setMISStatus('Throttled — retrying batch ' + batchNum + '...');
-          await new Promise(r => setTimeout(r, 2000 * retries));
-          continue;
-        }
-        if (dData.error.code === 401) { setMISStatus('Auth error — sign out and sign in again'); return; }
-        break;
+        setMISStatus('Error on batch ' + batchNum + ': ' + dData.error.message);
+        isLoadingMIS = false;
+        document.querySelectorAll('button[onclick*="loadMISData"]').forEach(b => { b.disabled = false; b.style.opacity = '1'; });
+        return;
       }
-      retries = 0;
-      if (!dData.values || !dData.values.length) break;
+      if (!dData.values || dData.values.length === 0) break;
+
       allRows = allRows.concat(dData.values);
       if (dData.values.length < BATCH) break;
       startRow += BATCH;
-      // Small pause to avoid throttling
-      await new Promise(r => setTimeout(r, 200));
     }
 
+    if (!allRows.length) {
+      setMISStatus('No data found in ' + tabName);
+      isLoadingMIS = false;
+      document.querySelectorAll('button[onclick*="loadMISData"]').forEach(b => { b.disabled = false; b.style.opacity = '1'; });
+      return;
+    }
+
+    setMISStatus('Parsing ' + allRows.length + ' rows...');
     misData = allRows.map(function(row) {
       var o = {}; headers.forEach(function(h, i) { o[h] = row[i] || ''; }); return o;
     });
-    misLoaded = true;
-    // Cache in session so it survives tab switches
+
+    // Cache for session
     try { sessionStorage.setItem('st_mis_data', JSON.stringify(misData)); } catch(e) {}
+
+    isLoadingMIS = false;
+    misLoaded = true;
+    document.querySelectorAll('button[onclick*="loadMISData"]').forEach(b => { b.disabled = false; b.style.opacity = '1'; });
     document.getElementById('mis-loading').style.display = 'none';
+
     computeMISMetrics();
     renderBizNumbers();
     renderAlerts();
     renderMISView();
-    // Replace connect strip with loaded state + reload button
+
+    // Show loaded bar
+    document.querySelectorAll('.mis-loaded-bar').forEach(el => el.remove());
     const strip = document.getElementById('biz-strip');
     if (strip) {
-      // Remove any existing bar first
-      document.querySelectorAll('.mis-loaded-bar').forEach(el => el.remove());
-      const loadedBar = document.createElement('div');
-      loadedBar.className = 'mis-loaded-bar';
-      loadedBar.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px 0 10px;font-size:10px;color:var(--g400);font-weight:600';
-      loadedBar.innerHTML = '<span style="color:var(--green)">✓ ' + misData.length.toLocaleString() + ' rows · ' + SHEET_TAB + '</span>' +
+      const lb = document.createElement('div');
+      lb.className = 'mis-loaded-bar';
+      lb.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px 0 10px;font-size:10px;color:var(--g400);font-weight:600';
+      lb.innerHTML = '<span style="color:var(--green)">✓ ' + misData.length.toLocaleString() + ' rows · ' + tabName + '</span>' +
         '<button class="btn btn-outline btn-sm" onclick="reloadMIS()" style="margin-left:auto">↻ Refresh Data</button>' +
         '<button class="btn btn-outline btn-sm" onclick="changeMISSheet()">✎ Change Sheet</button>';
-      strip.insertAdjacentElement('beforebegin', loadedBar);
+      strip.insertAdjacentElement('beforebegin', lb);
     }
-  } catch(e) { setMISStatus('Error: ' + e.message); }
+
+  } catch(e) {
+    setMISStatus('Error: ' + e.message);
+    isLoadingMIS = false;
+    document.querySelectorAll('button[onclick*="loadMISData"]').forEach(b => { b.disabled = false; b.style.opacity = '1'; });
+  }
+}
+
 }
 
 function setMISStatus(msg) { document.getElementById('mis-status-text').textContent = msg; }
