@@ -439,12 +439,26 @@ async function showApp() {
     try {
       SHEET_ID = sessionStorage.getItem('st_sheet_id') || '';
       SHEET_TAB = sessionStorage.getItem('st_sheet_tab') || '';
+      SHEET_ID = sessionStorage.getItem('st_sheet_id') || '';
+      SHEET_TAB = sessionStorage.getItem('st_sheet_tab') || '';
       misData = JSON.parse(cachedMIS);
       misLoaded = true;
       computeMISMetrics();
       renderBizNumbers();
       renderAlerts();
       renderMISView();
+      // Show loaded bar
+      const strip2 = document.getElementById('biz-strip');
+      if (strip2) {
+        document.querySelectorAll('.mis-loaded-bar').forEach(el => el.remove());
+        const lb = document.createElement('div');
+        lb.className = 'mis-loaded-bar';
+        lb.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px 0 10px;font-size:10px;color:var(--g400);font-weight:600';
+        lb.innerHTML = '<span style="color:var(--green)">✓ ' + misData.length.toLocaleString() + ' rows · ' + SHEET_TAB + ' (cached)</span>' +
+          '<button class="btn btn-outline btn-sm" onclick="reloadMIS()" style="margin-left:auto">↻ Refresh Data</button>' +
+          '<button class="btn btn-outline btn-sm" onclick="changeMISSheet()">✎ Change Sheet</button>';
+        strip2.insertAdjacentElement('beforebegin', lb);
+      }
     } catch(e) { showMISLoadPrompt(); }
   } else {
     showMISLoadPrompt();
@@ -452,11 +466,9 @@ async function showApp() {
 }
 
 function reloadMIS() {
-  // Clear cache and reload
   sessionStorage.removeItem('st_mis_data');
   misData = []; misLoaded = false;
-  // Remove loaded bar if present
-  document.querySelectorAll('[data-mis-bar]').forEach(el => el.remove());
+  document.querySelectorAll('.mis-loaded-bar').forEach(el => el.remove());
   loadMISData();
 }
 
@@ -721,7 +733,7 @@ async function loadMISData() {
     const headers = hData.values ? hData.values[0] : [];
     if (!headers.length) { setMISStatus('No headers found'); return; }
 
-    const BATCH = 1000;
+    const BATCH = 3000;
     let allRows = [], startRow = 2, batchNum = 0, retries = 0;
     while (true) {
       batchNum++;
@@ -767,10 +779,13 @@ async function loadMISData() {
     // Replace connect strip with loaded state + reload button
     const strip = document.getElementById('biz-strip');
     if (strip) {
+      // Remove any existing bar first
+      document.querySelectorAll('.mis-loaded-bar').forEach(el => el.remove());
       const loadedBar = document.createElement('div');
-      loadedBar.style.cssText = 'grid-column:1/-1;display:flex;align-items:center;gap:8px;padding:6px 0 10px;font-size:10px;color:var(--g400);font-weight:600';
-      loadedBar.innerHTML = '<span style="color:var(--green)">✓ ' + misData.length.toLocaleString() + ' rows loaded from ' + SHEET_TAB + '</span>' +
-        '<button class="btn btn-outline btn-sm" onclick="reloadMIS()" style="margin-left:auto">↻ Reload Sheet</button>' +
+      loadedBar.className = 'mis-loaded-bar';
+      loadedBar.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px 0 10px;font-size:10px;color:var(--g400);font-weight:600';
+      loadedBar.innerHTML = '<span style="color:var(--green)">✓ ' + misData.length.toLocaleString() + ' rows · ' + SHEET_TAB + '</span>' +
+        '<button class="btn btn-outline btn-sm" onclick="reloadMIS()" style="margin-left:auto">↻ Refresh Data</button>' +
         '<button class="btn btn-outline btn-sm" onclick="changeMISSheet()">✎ Change Sheet</button>';
       strip.insertAdjacentElement('beforebegin', loadedBar);
     }
