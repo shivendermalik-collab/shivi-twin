@@ -1280,7 +1280,33 @@ async function claude(prompt) {
 }
 
 // ── HELPERS ──────────────────────────────────────────────
-function parseD(val) { if (!val) return null; const d = new Date(val); return isNaN(d.getTime()) ? null : d; }
+function parseD(val) {
+  if (!val || val === '') return null;
+  // Already a Date object
+  if (val instanceof Date) return isNaN(val.getTime()) ? null : val;
+  const s = String(val).trim();
+  if (!s || s === '0') return null;
+  // Excel/Sheets serial number (e.g. 44611 or 46123.5)
+  const num = parseFloat(s);
+  if (!isNaN(num) && num > 40000 && num < 60000 && !s.includes('-') && !s.includes('/')) {
+    // Convert Excel serial to JS Date (Excel epoch = Jan 1 1900, JS epoch = Jan 1 1970)
+    const d = new Date((num - 25569) * 86400 * 1000);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  // ISO format: 2026-02-19 or 2026-02-19T12:45:29
+  if (s.match(/^\d{4}-\d{2}-\d{2}/)) {
+    const d = new Date(s.replace(' ', 'T'));
+    return isNaN(d.getTime()) ? null : d;
+  }
+  // US format: 2/19/2026 or 2/19/2026 12:45:29
+  if (s.match(/^\d{1,2}\/\d{1,2}\/\d{4}/)) {
+    const d = new Date(s);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  // Fallback
+  const d = new Date(s);
+  return isNaN(d.getTime()) ? null : d;
+}
 function getH(h, n) { return h.find(x => x.name.toLowerCase() === n.toLowerCase())?.value; }
 function extractBody(payload) {
   if (!payload) return '';
