@@ -279,6 +279,7 @@ body{font-family:'Montserrat',sans-serif;background:var(--g100);color:var(--blac
         <span class="section-title">📊 Business Numbers — MTD vs LMTD</span>
         <button class="section-action" onclick="switchTab('mis')">Full MIS →</button>
       </div>
+      <div id="home-mis-status" style="display:none;font-size:11px;font-weight:600;color:var(--purple);padding:6px 0 8px">Loading MIS...</div>
       <div class="biz-strip" id="biz-strip">
         <div class="biz-card c-orange"><div class="biz-label">Disbursals</div><div class="biz-num" id="b-disb">—</div><div class="biz-sub" id="b-disb-sub">Loading...</div></div>
         <div class="biz-card c-purple"><div class="biz-label">GMV</div><div class="biz-num" id="b-gmv">—</div><div class="biz-sub" id="b-gmv-sub">Loading...</div></div>
@@ -468,7 +469,9 @@ async function showApp() {
 function reloadMIS() {
   sessionStorage.removeItem('st_mis_data');
   misData = []; misLoaded = false;
+  isLoadingMIS = false;
   document.querySelectorAll('.mis-loaded-bar').forEach(el => el.remove());
+  document.querySelectorAll('.mis-connect-bar').forEach(el => el.remove());
   loadMISData();
 }
 
@@ -658,21 +661,28 @@ function copyReply(cardId) {
 
 
 function showMISLoadPrompt() {
+  // Show connect UI ABOVE biz-strip (not replacing it)
+  document.querySelectorAll('.mis-connect-bar').forEach(el => el.remove());
   const strip = document.getElementById('biz-strip');
-  if (strip) strip.innerHTML = '<div style="grid-column:1/-1;background:var(--white);border-radius:12px;border:1px dashed var(--g200);padding:20px 24px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">' +
-    '<span style="font-size:11px;font-weight:700;color:var(--black)">📊 Connect Sheet</span>' +
-    '<input id="mis-url-input" style="flex:1;min-width:240px;border:1px solid var(--g200);border-radius:8px;padding:7px 12px;font-family:Montserrat,sans-serif;font-size:11px;outline:none" placeholder="Paste Google Sheet URL...">' +
-    '<button class="btn btn-outline btn-sm" onclick="fetchMISTabs()">🔍 Get Tabs</button>' +
-    '<select id="mis-tab-select" style="border:1px solid var(--g200);border-radius:8px;padding:7px 12px;font-family:Montserrat,sans-serif;font-size:11px;outline:none;display:none;min-width:150px"><option value="">Select tab...</option></select>' +
-    '<button class="btn btn-orange btn-sm" onclick="loadMISData()">Load MIS</button>' +
-    '</div>';
+  if (strip) {
+    const bar = document.createElement('div');
+    bar.className = 'mis-connect-bar';
+    bar.style.cssText = 'background:var(--white);border-radius:12px;border:1px dashed var(--g200);padding:14px 18px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px';
+    bar.innerHTML = '<span style="font-size:11px;font-weight:700;color:var(--black)">📊 Connect Sheet</span>' +
+      '<input id="mis-url-input" style="flex:1;min-width:220px;border:1px solid var(--g200);border-radius:8px;padding:7px 12px;font-family:Montserrat,sans-serif;font-size:11px;outline:none" placeholder="Paste Google Sheet URL...">' +
+      '<button class="btn btn-outline btn-sm" onclick="fetchMISTabs()">🔍 Get Tabs</button>' +
+      '<select id="mis-tab-select" style="border:1px solid var(--g200);border-radius:8px;padding:7px 12px;font-family:Montserrat,sans-serif;font-size:11px;outline:none;display:none;min-width:150px"><option value="">Select tab...</option></select>' +
+      '<button class="btn btn-orange btn-sm" onclick="loadMISData()">Load MIS</button>';
+    strip.insertAdjacentElement('beforebegin', bar);
+    // Dim the KPI cards until data loads
+    strip.style.opacity = '0.3';
+  }
   const alerts = document.getElementById('alerts-strip');
   if (alerts) alerts.innerHTML = '<span class="alert-chip ok">Connect your sheet to see critical actionables</span>';
-  // Also show connect UI in MIS tab
   document.getElementById('mis-content').innerHTML = '<div style="text-align:center;padding:48px 20px;color:var(--g400)">' +
     '<div style="font-size:36px;margin-bottom:12px">📊</div>' +
     '<div style="font-size:14px;font-weight:700;color:var(--black);margin-bottom:6px">Connect your DCF Sheet</div>' +
-    '<div style="font-size:11px;line-height:1.6">Paste your Google Sheet URL in the Home tab and click Load MIS</div>' +
+    '<div style="font-size:11px;line-height:1.6">Paste your Google Sheet URL on the Home tab and click Load MIS</div>' +
     '</div>';
 }
 
@@ -805,13 +815,17 @@ async function loadMISData() {
     renderAlerts();
     renderMISView();
 
-    // Show loaded bar
+    // Remove connect bar, restore strip, show loaded bar
+    document.querySelectorAll('.mis-connect-bar').forEach(el => el.remove());
     document.querySelectorAll('.mis-loaded-bar').forEach(el => el.remove());
+    const homeStatus = document.getElementById('home-mis-status');
+    if (homeStatus) homeStatus.style.display = 'none';
     const strip = document.getElementById('biz-strip');
     if (strip) {
+      strip.style.opacity = '1';
       const lb = document.createElement('div');
       lb.className = 'mis-loaded-bar';
-      lb.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px 0 10px;font-size:10px;color:var(--g400);font-weight:600';
+      lb.style.cssText = 'display:flex;align-items:center;gap:8px;padding:0 0 8px;font-size:10px;color:var(--g400);font-weight:600';
       lb.innerHTML = '<span style="color:var(--green)">✓ ' + misData.length.toLocaleString() + ' rows · ' + tabName + '</span>' +
         '<button class="btn btn-outline btn-sm" onclick="reloadMIS()" style="margin-left:auto">↻ Refresh Data</button>' +
         '<button class="btn btn-outline btn-sm" onclick="changeMISSheet()">✎ Change Sheet</button>';
@@ -825,7 +839,12 @@ async function loadMISData() {
   }
 }
 
-function setMISStatus(msg) { document.getElementById('mis-status-text').textContent = msg; }
+function setMISStatus(msg) {
+  const el = document.getElementById('mis-status-text');
+  if (el) el.textContent = msg;
+  const hel = document.getElementById('home-mis-status');
+  if (hel) { hel.textContent = msg; hel.style.display = msg ? 'block' : 'none'; }
+}
 
 function computeMISMetrics() {
   const dates = misData.map(r => parseD(r['LEAD_CREATION_DATE'])).filter(Boolean);
