@@ -629,15 +629,49 @@ async function openReply(cardId, emailId) {
   try {
     const full = await (await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/' + emailId + '?format=full', { headers: { Authorization: 'Bearer ' + token } })).json();
     const h = full.payload?.headers || [];
+    const fromHeader = getH(h, 'From') || '';
+    const subjectHeader = getH(h, 'Subject') || '';
+    const threadId = full.threadId;
+    const msgId = getH(h, 'Message-ID') || emailId;
     const body = extractBody(full.payload);
-    const draft = await claude('Draft a professional concise reply for Shivender Malik (DCF head, CARS24/Loans24). Match tone. Be direct.\n\nFrom: ' + getH(h,'From') + '\nSubject: ' + getH(h,'Subject') + '\nBody: ' + body.substring(0, 2000) + '\n\nReply body only.');
+    const draft = await claude('Draft a professional concise reply for Shivender Malik (DCF head, CARS24/Loans24). Match tone. Be direct.\n\nFrom: ' + fromHeader + '\nSubject: ' + subjectHeader + '\nBody: ' + body.substring(0, 2000) + '\n\nReply body only. No greeting needed, start directly with the content.');
+    // Extract reply-to email address
+    const toEmail = fromHeader.match(/<(.+?)>/) ? fromHeader.match(/<(.+?)>/)[1] : fromHeader.trim();
+    const replySubject = subjectHeader.startsWith('Re:') ? subjectHeader : 'Re: ' + subjectHeader;
     box.innerHTML = '<textarea class="reply-textarea" id="rt-' + cardId + '">' + draft + '</textarea>' +
       '<div class="reply-actions">' +
-      '<button class="btn btn-purple btn-sm" onclick="copyReply(\'' + cardId + '\')">Copy</button>' +
-      '<button class="btn btn-outline btn-sm" onclick="document.getElementById(\'reply-' + cardId + '\').classList.remove(\'open\')">Close</button>' +
-      '<span class="reply-note">Copy and paste into Gmail to send</span>' +
+      '<button class="btn btn-purple btn-sm" onclick="sendReply(\'' + cardId + '\',\'' + toEmail + '\',\'' + encodeURIComponent(replySubject) + '\',\'' + threadId + '\',\'' + msgId + '\')">↩ Send via Gmail</button>' +
+      '<button class="btn btn-outline btn-sm" onclick="copyReply(\'' + cardId + '\')">Copy</button>' +
+      '<button class="btn btn-outline btn-sm" onclick="document.getElementById(\'reply-' + cardId + '\').classList.remove(\'open\')">Discard</button>' +
       '</div>';
   } catch(e) { box.innerHTML = '<div style="color:var(--red);font-size:11px">Error drafting reply</div>'; }
+}
+
+async function sendReply(cardId, toEmail, encodedSubject, threadId, msgId) {
+  const ta = document.getElementById('rt-' + cardId);
+  if (!ta) return;
+  const body = ta.value.trim();
+  const subject = decodeURIComponent(encodedSubject);
+  const btn = ta.nextElementSibling?.querySelector('.btn-purple');
+  if (btn) { btn.textContent = 'Sending...'; btn.disabled = true; }
+  try {
+    const result = await gmailSend([toEmail], subject, body, threadId, msgId);
+    if (result.id) {
+      const box = document.getElementById('reply-' + cardId);
+      box.innerHTML = '<div style="color:var(--green);font-size:11px;font-weight:700;padding:6px 0">✓ Reply sent successfully</div>';
+      setTimeout(() => { box.classList.remove('open'); box.innerHTML = ''; }, 2000);
+      setStatus('✓ Reply sent to ' + toEmail);
+      setTimeout(hideStatus, 3000);
+    } else {
+      if (btn) { btn.textContent = '↩ Send via Gmail'; btn.disabled = false; }
+      setStatus('Send failed: ' + (result.error?.message || 'Unknown error'));
+      setTimeout(hideStatus, 3000);
+    }
+  } catch(e) {
+    if (btn) { btn.textContent = '↩ Send via Gmail'; btn.disabled = false; }
+    setStatus('Error: ' + e.message);
+    setTimeout(hideStatus, 3000);
+  }
 }
 
 async function summarizeEmail(emailId, cardId) {
@@ -1150,26 +1184,70 @@ function openShare() { document.getElementById('share-modal').classList.add('ope
 function closeShare() { document.getElementById('share-modal').classList.remove('open'); }
 function closeShareIfBg(e) { if (e.target === document.getElementById('share-modal')) closeShare(); }
 
+
+// ── GMAIL SEND ───────────────────────────────────────────
+function makeEmail(to, subject, body, replyToMessageId, replyToThreadId) {
+  const toStr = Array.isArray(to) ? to.join(', ') : to;
+  let headers = 'To: ' + toStr + '\r\nSubject: ' + subject + '\r\nContent-Type: text/plain; charset=utf-8\r\n';
+  if (replyToMessageId) headers += 'In-Reply-To: ' + replyToMessageId + '\r\nReferences: ' + replyToMessageId + '\r\n';
+  const raw = headers + '\r\n' + body;
+  return btoa(unescape(encodeURIComponent(raw))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+
+async function gmailSend(to, subject, body, threadId, messageId) {
+  const payload = { raw: makeEmail(to, subject, body, messageId, threadId) };
+  if (threadId) payload.threadId = threadId;
+  const res = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+    method: 'POST',
+    headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  return res.json();
+}
+
 async function sendShare() {
   if (!selectedTeammates.length) { alert('Select at least one teammate'); return; }
   const m = misMetrics;
-  const subject = 'DCF MIS Snapshot — ' + new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
-  const body = 'DCF Daily Snapshot\n\n' +
-    'MTD Disbursals: ' + (m.disb?.mtd || '—') + ' (LMTD: ' + (m.disb?.lmtd || '—') + ')\n' +
-    'MTD GMV: ₹' + ((m.gmv?.mtd || 0) / 1e7).toFixed(1) + 'Cr\n' +
-    'MTD Leads: ' + (m.leads?.mtd || '—') + '\n' +
-    'L2L%: ' + (m.l2l || '—') + '% | A2D%: ' + (m.a2d || '—') + '% | GC Share: ' + (m.gc || '—') + '%\n\n' +
-    'View full dashboard: ' + location.href;
+  const today = new Date();
+  const dateStr = today.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  const subject = 'DCF MIS Snapshot — ' + dateStr;
+  const body = [
+    'Hi team,',
+    '',
+    'DCF Daily Snapshot — ' + dateStr,
+    '─────────────────────────────',
+    'Disbursals MTD : ' + (m.disb?.mtd || '—') + ' (LMTD: ' + (m.disb?.lmtd || '—') + ' | LM: ' + (m.disb?.lm || '—') + ')',
+    'GMV MTD        : ₹' + ((m.gmv?.mtd || 0) / 1e7).toFixed(1) + 'Cr (LMTD: ₹' + ((m.gmv?.lmtd || 0) / 1e7).toFixed(1) + 'Cr)',
+    'Leads MTD      : ' + (m.leads?.mtd || '—') + ' (LMTD: ' + (m.leads?.lmtd || '—') + ')',
+    'Logins MTD     : ' + (m.logins?.mtd || '—'),
+    '',
+    'Key Ratios',
+    '─────────────────────────────',
+    'L2L%    : ' + (m.l2l || '—') + '% (threshold: 45%)',
+    'A2D%    : ' + (m.a2d || '—') + '% (threshold: 40%)',
+    'GC Share: ' + (m.gc || '—') + '% (threshold: 55%)',
+    '',
+    'Dashboard: ' + location.href,
+    '',
+    'Shivender'
+  ].join('\n');
 
   const recipients = selectedTeammates.map(i => TEAMMATES[i].email);
 
   if (shareVia === 'email') {
-    // Open Gmail compose via mailto
-    const mailto = 'mailto:' + recipients.join(',') + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
-    window.open(mailto);
-    closeShare();
-    setStatus('✓ Opening email composer');
-    setTimeout(hideStatus, 3000);
+    try {
+      const sendBtn = document.querySelector('#share-modal .btn-purple');
+      if (sendBtn) { sendBtn.textContent = 'Sending...'; sendBtn.disabled = true; }
+      // Send to each recipient
+      const results = await Promise.all(recipients.map(r => gmailSend([r], subject, body)));
+      const success = results.filter(r => r.id).length;
+      closeShare();
+      setStatus('✓ Report sent to ' + success + ' teammate' + (success !== 1 ? 's' : ''));
+      setTimeout(hideStatus, 4000);
+    } catch(e) {
+      setStatus('Error sending: ' + e.message);
+      setTimeout(hideStatus, 3000);
+    }
   } else {
     setStatus('Slack share coming soon');
     setTimeout(hideStatus, 2000);
