@@ -274,6 +274,7 @@ body{font-family:'Montserrat',sans-serif;background:var(--g100);color:var(--blac
   <div class="content" id="view-home">
 
     <!-- Section 1: Business Numbers -->
+    <div id="debug-panel"></div>
     <div class="section-block">
       <div class="section-hdr">
         <span class="section-title">📊 Business Numbers — MTD vs LMTD</span>
@@ -806,7 +807,7 @@ async function loadMISData() {
       setMISStatus('Loading batch ' + batchNum + ' (rows ' + startRow + '–' + endRow + ')... ' + allRows.length + ' loaded');
 
       const dRes = await fetch(
-        'https://sheets.googleapis.com/v4/spreadsheets/' + sheetId + '/values/' + encodeURIComponent(tabName) + '!A' + startRow + ':BZ' + endRow,
+        'https://sheets.googleapis.com/v4/spreadsheets/' + sheetId + '/values/' + encodeURIComponent(tabName) + '!A' + startRow + ':BZ' + endRow + '?valueRenderOption=FORMATTED_VALUE',
         { headers: { Authorization: 'Bearer ' + token } }
       );
       const dData = await dRes.json();
@@ -905,13 +906,54 @@ function computeMISMetrics() {
   const mtdA = misData.filter(r => inR(r['APPROVAL_DATE'], mtdS, today));
   const lmtdA = misData.filter(r => inR(r['APPROVAL_DATE'], lmS, lmtdE));
   const lmA = misData.filter(r => inR(r['APPROVAL_DATE'], lmS, lmE));
-  const mtdD = misData.filter(r => inR(r['DISBURSAL_DATE'], mtdS, today));
-  const lmtdD = misData.filter(r => inR(r['DISBURSAL_DATE'], lmS, lmtdE));
-  const lmD = misData.filter(r => inR(r['DISBURSAL_DATE'], lmS, lmE));
+  const mtdD = misData.filter(r => inR(r['DISBURSAL_DATE'] || r['DISBURSAL_DATETIME'], mtdS, today));
+  const lmtdD = misData.filter(r => inR(r['DISBURSAL_DATE'] || r['DISBURSAL_DATETIME'], lmS, lmtdE));
+  const lmD = misData.filter(r => inR(r['DISBURSAL_DATE'] || r['DISBURSAL_DATETIME'], lmS, lmE));
   const gmv = r => parseFloat(r['LOAN_SANCTION']) || 0;
   const gcShare = d => d.length ? Math.round(d.filter(r => r['DS_CHANNEL_']?.includes('Green')).length / d.length * 100) : 0;
   const pct = (a, b) => b > 0 ? Math.round(a / b * 100) : 0;
   const dlt = (a, b) => b > 0 ? Math.round((a - b) / b * 100) : 0;
+
+  // Debug disbursals — check both column names
+  const allCols = Object.keys(misData[0] || {});
+  const hasPrimary = allCols.includes('DISBURSAL_DATE');
+  const hasAlt = allCols.includes('DISBURSAL_DATETIME');
+  console.log('[Date Debug] Columns:', allCols);
+  console.log('[Date Debug] DISBURSAL_DATE present:', hasPrimary, '| DISBURSAL_DATETIME present:', hasAlt);
+  console.log('[Date Debug] today:', today, 'mtdS:', mtdS);
+  const getDisb = r => r['DISBURSAL_DATE'] || r['DISBURSAL_DATETIME'];
+  const allWithDisb = misData.filter(r => { const v = getDisb(r); return v && String(v).trim() !== ''; });
+  const onlyPrimary = misData.filter(r => r['DISBURSAL_DATE'] && String(r['DISBURSAL_DATE']).trim() !== '');
+  const onlyAlt = misData.filter(r => r['DISBURSAL_DATETIME'] && String(r['DISBURSAL_DATETIME']).trim() !== '');
+  const sampleDisb = allWithDisb.slice(0, 10);
+
+  // Render debug panel
+  const debugEl = document.getElementById('debug-panel');
+  if (debugEl) {
+    const parsedCount = allWithDisb.filter(r => parseD(getDisb(r)) !== null).length;
+    const inRangeCount = allWithDisb.filter(r => inR(getDisb(r), mtdS, today)).length;
+    const lmCount = allWithDisb.filter(r => inR(getDisb(r), lmS, lmE)).length;
+    debugEl.innerHTML = '<div style="background:#1a1a2e;color:#e0e0e0;border-radius:10px;padding:14px 16px;font-family:monospace;font-size:11px;line-height:1.8;margin-bottom:14px">' +
+      '<div style="color:var(--orange);font-weight:700;margin-bottom:6px">🐛 DEBUG v2 — Disbursal Date Diagnostics</div>' +
+      '<div>Total rows loaded: <b>' + misData.length + '</b></div>' +
+      '<div>DISBURSAL_DATE col: ' + (hasPrimary ? '<b style="color:#4caf50">FOUND (' + onlyPrimary.length + ' rows)</b>' : '<b style="color:#ff5252">MISSING</b>') +
+        ' | DISBURSAL_DATETIME col: ' + (hasAlt ? '<b style="color:#4caf50">FOUND (' + onlyAlt.length + ' rows)</b>' : '<b style="color:#ff5252">MISSING</b>') + '</div>' +
+      '<div>Rows with any disbursal value: <b>' + allWithDisb.length + '</b></div>' +
+      '<div>Parsed OK: <b>' + parsedCount + '</b> / ' + allWithDisb.length + (parsedCount < allWithDisb.length ? ' <span style="color:#ff5252">⚠️ ' + (allWithDisb.length - parsedCount) + ' FAILED</span>' : ' ✓') + '</div>' +
+      '<div>Today (max lead date): <b>' + today.toLocaleDateString() + '</b> | MTD: <b>' + mtdS.toLocaleDateString() + ' → ' + today.toLocaleDateString() + '</b></div>' +
+      '<div style="background:#2a2a4e;padding:6px 10px;border-radius:6px;margin:4px 0"><span style="color:#4caf50;font-weight:700;font-size:14px">MTD Disbursals: ' + inRangeCount + '</span> | LM: ' + lmCount + '</div>' +
+      '<div style="margin-top:6px;color:var(--orange);font-weight:700">Sample raw values (first 10 disbursed rows):</div>' +
+      sampleDisb.map((r, i) => {
+        const p = r['DISBURSAL_DATE'], a = r['DISBURSAL_DATETIME'];
+        const eff = p || a;
+        const parsed = parseD(eff);
+        const inMtd = inR(eff, mtdS, today);
+        return '<div style="color:' + (parsed ? (inMtd ? '#4caf50' : '#ffab40') : '#ff5252') + '">' +
+          (i + 1) + '. PRIMARY="' + (p || '') + '" ALT="' + (a || '') + '" → ' + (parsed ? parsed.toISOString().slice(0, 10) : 'PARSE FAIL') + (inMtd ? ' ✓MTD' : '') + '</div>';
+      }).join('') +
+      '<div style="margin-top:6px;color:#666;font-size:10px;word-break:break-all">All cols: ' + allCols.join(' | ') + '</div>' +
+      '</div>';
+  }
 
   misMetrics = {
     today, mtdS, lmS, lmE, lmtdE,
@@ -1289,14 +1331,12 @@ async function claude(prompt) {
 // ── HELPERS ──────────────────────────────────────────────
 function parseD(val) {
   if (!val || val === '') return null;
-  // Already a Date object
   if (val instanceof Date) return isNaN(val.getTime()) ? null : val;
   const s = String(val).trim();
   if (!s || s === '0') return null;
   // Excel/Sheets serial number (e.g. 44611 or 46123.5)
   const num = parseFloat(s);
   if (!isNaN(num) && num > 40000 && num < 60000 && !s.includes('-') && !s.includes('/')) {
-    // Convert Excel serial to JS Date (Excel epoch = Jan 1 1900, JS epoch = Jan 1 1970)
     const d = new Date((num - 25569) * 86400 * 1000);
     return isNaN(d.getTime()) ? null : d;
   }
@@ -1305,10 +1345,27 @@ function parseD(val) {
     const d = new Date(s.replace(' ', 'T'));
     return isNaN(d.getTime()) ? null : d;
   }
-  // US format: 2/19/2026 or 2/19/2026 12:45:29
-  if (s.match(/^\d{1,2}\/\d{1,2}\/\d{4}/)) {
-    const d = new Date(s);
-    return isNaN(d.getTime()) ? null : d;
+  // DD-MM-YYYY or DD/MM/YYYY (Indian format — day first)
+  const ddmmyyyy = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+  if (ddmmyyyy) {
+    const [_, dd, mm, yyyy] = ddmmyyyy;
+    const day = parseInt(dd), month = parseInt(mm), year = parseInt(yyyy);
+    // Heuristic: if first number > 12, it's definitely DD-MM-YYYY
+    // If first number <= 12 and second > 12, it's MM-DD-YYYY
+    // If both <= 12, assume DD-MM-YYYY (Indian locale default)
+    if (day > 12) {
+      // Definitely DD-MM-YYYY
+      const d = new Date(year, month - 1, day);
+      return isNaN(d.getTime()) ? null : d;
+    } else if (month > 12) {
+      // Definitely MM-DD-YYYY (US format)
+      const d = new Date(year, day - 1, month);
+      return isNaN(d.getTime()) ? null : d;
+    } else {
+      // Ambiguous — assume DD-MM-YYYY (Indian locale)
+      const d = new Date(year, month - 1, day);
+      return isNaN(d.getTime()) ? null : d;
+    }
   }
   // Fallback
   const d = new Date(s);
