@@ -381,8 +381,8 @@ body{font-family:'Montserrat',sans-serif;background:var(--g100);color:var(--blac
 // ── CONFIG ──────────────────────────────────────────────
 const CLIENT_ID = '322751089633-u99meo5em7lnco8blpl5dtgosiarcmkf.apps.googleusercontent.com';
 const PROXY = 'https://frosty-bush-03e9.mshivenderk-710.workers.dev';
-const SHEET_ID = '17Uktk9crbcF-rps1SSVfAQmwkRb3Vhl1t717IQvw8qI';
-const SHEET_TAB = 'New_Raw_Data';
+let SHEET_ID = '';
+let SHEET_TAB = '';
 const SCOPES = [
   'https://www.googleapis.com/auth/gmail.readonly',
   'https://www.googleapis.com/auth/gmail.modify',
@@ -431,14 +431,31 @@ async function showApp() {
     document.getElementById('user-tag').textContent = d.email || '';
   } catch(e) {}
   buildTeammateGrid();
-  // Start parallel loads
   loadEmails(50);
-  loadMISData();
   startCountdown();
+  // Restore MIS from session cache if previously loaded
+  const cachedMIS = sessionStorage.getItem('st_mis_data');
+  if (cachedMIS) {
+    try {
+      SHEET_ID = sessionStorage.getItem('st_sheet_id') || '';
+      SHEET_TAB = sessionStorage.getItem('st_sheet_tab') || '';
+      misData = JSON.parse(cachedMIS);
+      misLoaded = true;
+      computeMISMetrics();
+      renderBizNumbers();
+      renderAlerts();
+      renderMISView();
+    } catch(e) { showMISLoadPrompt(); }
+  } else {
+    showMISLoadPrompt();
+  }
 }
 
 function signOut() {
   sessionStorage.removeItem('st_v4');
+  sessionStorage.removeItem('st_mis_data');
+  sessionStorage.removeItem('st_sheet_id');
+  sessionStorage.removeItem('st_sheet_tab');
   clearInterval(countdownInt);
   location.reload();
 }
@@ -609,8 +626,74 @@ function copyReply(cardId) {
   if (ta) navigator.clipboard.writeText(ta.value).then(() => setStatus('✓ Copied to clipboard'));
 }
 
+
+function showMISLoadPrompt() {
+  const strip = document.getElementById('biz-strip');
+  if (strip) strip.innerHTML = '<div style="grid-column:1/-1;background:var(--white);border-radius:12px;border:1px dashed var(--g200);padding:20px 24px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">' +
+    '<span style="font-size:11px;font-weight:700;color:var(--black)">📊 Connect Sheet</span>' +
+    '<input id="mis-url-input" style="flex:1;min-width:240px;border:1px solid var(--g200);border-radius:8px;padding:7px 12px;font-family:Montserrat,sans-serif;font-size:11px;outline:none" placeholder="Paste Google Sheet URL...">' +
+    '<button class="btn btn-outline btn-sm" onclick="fetchMISTabs()">🔍 Get Tabs</button>' +
+    '<select id="mis-tab-select" style="border:1px solid var(--g200);border-radius:8px;padding:7px 12px;font-family:Montserrat,sans-serif;font-size:11px;outline:none;display:none;min-width:150px"><option value="">Select tab...</option></select>' +
+    '<button class="btn btn-orange btn-sm" onclick="loadMISData()">Load MIS</button>' +
+    '</div>';
+  const alerts = document.getElementById('alerts-strip');
+  if (alerts) alerts.innerHTML = '<span class="alert-chip ok">Connect your sheet to see critical actionables</span>';
+  // Also show connect UI in MIS tab
+  document.getElementById('mis-content').innerHTML = '<div style="text-align:center;padding:48px 20px;color:var(--g400)">' +
+    '<div style="font-size:36px;margin-bottom:12px">📊</div>' +
+    '<div style="font-size:14px;font-weight:700;color:var(--black);margin-bottom:6px">Connect your DCF Sheet</div>' +
+    '<div style="font-size:11px;line-height:1.6">Paste your Google Sheet URL in the Home tab and click Load MIS</div>' +
+    '</div>';
+}
+
+async function fetchMISTabs() {
+  const urlInput = document.getElementById('mis-url-input');
+  if (!urlInput) return;
+  const url = urlInput.value.trim();
+  const idMatch = url.match(/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+  if (!idMatch) { setStatus('Invalid Google Sheets URL'); setTimeout(hideStatus, 2000); return; }
+  SHEET_ID = idMatch[1];
+  setStatus('Fetching tabs...');
+  try {
+    const res = await fetch('https://sheets.googleapis.com/v4/spreadsheets/' + SHEET_ID + '?fields=sheets.properties', { headers: { Authorization: 'Bearer ' + token } });
+    const meta = await res.json();
+    if (meta.error) { setStatus('Auth error — sign out and sign in again'); return; }
+    const sel = document.getElementById('mis-tab-select');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">Select tab...</option>';
+    (meta.sheets || []).forEach(s => {
+      const o = document.createElement('option');
+      o.value = s.properties.title;
+      o.textContent = s.properties.title;
+      // Pre-select tab matching GID in URL
+      const gidMatch = url.match(/gid=(\d+)/);
+      if (gidMatch && String(s.properties.sheetId) === String(gidMatch[1])) o.selected = true;
+      sel.appendChild(o);
+    });
+    sel.style.display = 'block';
+    hideStatus();
+  } catch(e) { setStatus('Error: ' + e.message); }
+}
+
 // ── MIS DATA ─────────────────────────────────────────────
 async function loadMISData() {
+  // Resolve sheet ID and tab from inputs if not already set
+  const urlInput = document.getElementById('mis-url-input');
+  if (urlInput) {
+    const url = urlInput.value.trim();
+    const idMatch = url.match(/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+    if (idMatch) SHEET_ID = idMatch[1];
+  }
+  const tabSel = document.getElementById('mis-tab-select');
+  if (tabSel && tabSel.value) SHEET_TAB = tabSel.value;
+  // Also try saved values from session
+  if (!SHEET_ID) { const s = sessionStorage.getItem('st_sheet_id'); if (s) SHEET_ID = s; }
+  if (!SHEET_TAB) { const s = sessionStorage.getItem('st_sheet_tab'); if (s) SHEET_TAB = s; }
+  if (!SHEET_ID || !SHEET_TAB) { setStatus('Please paste a sheet URL and select a tab first'); setTimeout(hideStatus, 3000); return; }
+  // Save for session restore
+  sessionStorage.setItem('st_sheet_id', SHEET_ID);
+  sessionStorage.setItem('st_sheet_tab', SHEET_TAB);
+
   document.getElementById('mis-loading').style.display = 'block';
   setMISStatus('Loading MIS data...');
   try {
@@ -637,6 +720,8 @@ async function loadMISData() {
       var o = {}; headers.forEach(function(h, i) { o[h] = row[i] || ''; }); return o;
     });
     misLoaded = true;
+    // Cache in session so it survives tab switches
+    try { sessionStorage.setItem('st_mis_data', JSON.stringify(misData)); } catch(e) {}
     document.getElementById('mis-loading').style.display = 'none';
     computeMISMetrics();
     renderBizNumbers();
