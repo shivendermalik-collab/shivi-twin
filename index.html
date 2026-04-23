@@ -4,565 +4,214 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Shivi-twin — Command Center</title>
+<title>Shivi-twin</title>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 :root {
-  --purple: #3D3DAA;
-  --purple-dark: #2B2B88;
-  --purple-light: #EEEEF9;
-  --orange: #FF5100;
-  --orange-light: #FFF0EB;
-  --green: #1A9E5F;
-  --green-bg: #E8F7F0;
-  --black: #111111;
-  --grey-800: #333333;
-  --grey-600: #555555;
-  --grey-400: #999999;
-  --grey-200: #E0E0E0;
-  --grey-100: #F5F5F5;
-  --grey-50: #FAFAFA;
-  --white: #FFFFFF;
-  --shadow-sm: 0 1px 4px rgba(0,0,0,0.08);
-  --shadow-md: 0 2px 12px rgba(0,0,0,0.10);
+  --purple:#3D3DAA; --purple-dark:#2B2B88; --purple-light:#EEEEF9;
+  --orange:#FF5100; --orange-light:#FFF0EB;
+  --green:#1A9E5F; --green-bg:#E8F7F0;
+  --red:#D32F2F; --red-bg:#FFEBEE;
+  --yellow:#F9A825; --yellow-bg:#FFFDE7;
+  --black:#111111; --g800:#333333; --g600:#555555; --g400:#999999;
+  --g200:#E0E0E0; --g100:#F5F5F5; --g50:#FAFAFA; --white:#FFFFFF;
+  --shadow:0 1px 4px rgba(0,0,0,0.08); --shadow-md:0 2px 12px rgba(0,0,0,0.10);
 }
-
-* { margin: 0; padding: 0; box-sizing: border-box; }
-
-body {
-  font-family: 'Montserrat', sans-serif;
-  background: var(--grey-100);
-  color: var(--black);
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-
-/* ── AUTH ── */
-#auth-screen {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  padding: 40px 20px;
-}
-
-.auth-card {
-  background: var(--white);
-  border-radius: 20px;
-  box-shadow: var(--shadow-md);
-  width: 100%;
-  max-width: 480px;
-  overflow: hidden;
-}
-
-.auth-hero {
-  background: linear-gradient(135deg, var(--purple) 0%, var(--purple-dark) 100%);
-  padding: 40px 36px 32px;
-  color: var(--white);
-}
-
-.auth-logo {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 28px;
-}
-
-.logo-pill {
-  background: var(--orange);
-  color: var(--white);
-  font-weight: 800;
-  font-size: 13px;
-  padding: 5px 12px;
-  border-radius: 20px;
-  letter-spacing: 0.5px;
-}
-
-.logo-text {
-  font-weight: 700;
-  font-size: 15px;
-  opacity: 0.9;
-  letter-spacing: -0.3px;
-}
-
-.auth-hero h1 {
-  font-size: 26px;
-  font-weight: 800;
-  letter-spacing: -0.5px;
-  margin-bottom: 8px;
-}
-
-.auth-hero h1 span { color: var(--orange); }
-
-.auth-hero p {
-  font-size: 12px;
-  font-weight: 400;
-  opacity: 0.7;
-  line-height: 1.6;
-}
-
-.auth-body { padding: 28px 36px 36px; }
-
-.channel-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin-bottom: 24px;
-}
-
-.channel-chip {
-  background: var(--grey-100);
-  border: 1px solid var(--grey-200);
-  border-radius: 10px;
-  padding: 10px 12px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--grey-800);
-}
-
-.channel-chip .ch-icon { font-size: 16px; }
-.channel-chip.live { border-color: var(--green); background: var(--green-bg); color: var(--green); }
-.channel-chip.soon { border-color: var(--orange); background: var(--orange-light); color: var(--orange); }
-.channel-chip .ch-badge { margin-left: auto; font-size: 9px; font-weight: 700; }
-
-.btn-google {
-  width: 100%;
-  background: linear-gradient(135deg, var(--purple), var(--purple-dark));
-  color: var(--white);
-  border: none;
-  border-radius: 10px;
-  padding: 14px 20px;
-  font-family: 'Montserrat', sans-serif;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  transition: all 0.2s;
-  letter-spacing: 0.3px;
-}
-
-.btn-google:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(61,61,170,0.3); }
-
-/* ── APP SHELL ── */
-#app-screen { display: none; flex-direction: column; min-height: 100vh; }
-
-/* Top bar */
-.topbar {
-  background: linear-gradient(135deg, var(--purple) 0%, var(--purple-dark) 100%);
-  padding: 0 24px;
-  height: 56px;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-}
-
-.topbar-logo { display: flex; align-items: center; gap: 8px; }
-.topbar-pill { background: var(--orange); color: var(--white); font-weight: 800; font-size: 11px; padding: 3px 10px; border-radius: 20px; }
-.topbar-name { color: var(--white); font-weight: 700; font-size: 14px; opacity: 0.9; }
-
-.topbar-channels { display: flex; gap: 6px; margin-left: 8px; }
-.ch-tag {
-  display: flex; align-items: center; gap: 5px;
-  font-size: 10px; font-weight: 700;
-  padding: 4px 10px; border-radius: 20px;
-  cursor: default;
-}
-.ch-tag.connected { background: rgba(255,255,255,0.15); color: var(--white); }
-.ch-tag.pending { background: rgba(255,81,0,0.2); color: rgba(255,255,255,0.6); }
-.ch-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--green); }
-.ch-dot.off { background: rgba(255,255,255,0.3); }
-
-.topbar-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
-.user-tag { color: rgba(255,255,255,0.7); font-size: 11px; font-weight: 500; }
-.timer-tag { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.8); font-size: 10px; font-weight: 600; padding: 4px 10px; border-radius: 20px; }
-.btn-signout { background: rgba(255,255,255,0.1); color: var(--white); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; padding: 5px 12px; font-size: 11px; font-weight: 600; cursor: pointer; font-family: 'Montserrat', sans-serif; transition: all 0.2s; }
-.btn-signout:hover { background: rgba(255,255,255,0.2); }
-
-/* Main layout */
-.app-body { display: grid; grid-template-columns: 220px 1fr; flex: 1; gap: 0; }
-
-/* Sidebar */
-.sidebar {
-  background: var(--white);
-  border-right: 1px solid var(--grey-200);
-  padding: 20px 0;
-  min-height: calc(100vh - 56px);
-  position: sticky;
-  top: 56px;
-  height: calc(100vh - 56px);
-  overflow-y: auto;
-}
-
-.sidebar-section { margin-bottom: 24px; }
-.sidebar-label {
-  font-size: 8.5px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  color: var(--grey-400);
-  padding: 0 16px;
-  margin-bottom: 6px;
-}
-
-.nav-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 9px 16px;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--grey-600);
-  cursor: pointer;
-  transition: all 0.15s;
-  border-left: 3px solid transparent;
-}
-.nav-item:hover { background: var(--grey-100); color: var(--purple); }
-.nav-item.active { background: var(--purple-light); color: var(--purple); border-left-color: var(--purple); }
-.nav-item .nav-icon { font-size: 15px; width: 20px; text-align: center; }
-.nav-count { margin-left: auto; background: var(--orange); color: var(--white); font-size: 9px; font-weight: 700; padding: 2px 7px; border-radius: 10px; }
-.nav-count.purple { background: var(--purple-light); color: var(--purple); }
-.nav-count.green { background: var(--green-bg); color: var(--green); }
-.nav-count.grey { background: var(--grey-100); color: var(--grey-400); }
-
-.sidebar-divider { height: 1px; background: var(--grey-200); margin: 8px 16px; }
-
-/* Content area */
-.content { padding: 20px 24px; overflow-y: auto; }
-
-/* Action bar */
-.action-bar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 16px;
-  flex-wrap: wrap;
-}
-
-.btn {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 8px 16px; border-radius: 8px;
-  font-family: 'Montserrat', sans-serif; font-size: 11px; font-weight: 700;
-  cursor: pointer; border: none; transition: all 0.2s;
-}
-.btn-orange { background: var(--orange); color: var(--white); }
-.btn-orange:hover { background: #e04800; transform: translateY(-1px); }
-.btn-purple { background: var(--purple); color: var(--white); }
-.btn-purple:hover { background: var(--purple-dark); }
-.btn-outline { background: var(--white); color: var(--grey-800); border: 1px solid var(--grey-200); }
-.btn-outline:hover { border-color: var(--purple); color: var(--purple); }
-.btn-green { background: var(--green-bg); color: var(--green); border: 1px solid var(--green); }
-
-/* Stats strip */
-.stats-strip {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 10px;
-  margin-bottom: 16px;
-}
-
-.stat-card {
-  background: var(--white);
-  border: 1px solid var(--grey-200);
-  border-radius: 14px;
-  padding: 14px 12px;
-  box-shadow: var(--shadow-sm);
-  position: relative;
-  overflow: hidden;
-}
-
-.stat-card::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 3px;
-}
-
-.stat-card.s-orange::before { background: var(--orange); }
-.stat-card.s-purple::before { background: var(--purple); }
-.stat-card.s-green::before { background: var(--green); }
-.stat-card.s-grey::before { background: var(--grey-400); }
-.stat-card.s-red::before { background: #E53935; }
-.stat-card.s-yellow::before { background: #F9A825; }
-
-.stat-num {
-  font-size: 24px; font-weight: 800; letter-spacing: -0.5px;
-  margin-bottom: 2px;
-}
-.stat-card.s-orange .stat-num { color: var(--orange); }
-.stat-card.s-purple .stat-num { color: var(--purple); }
-.stat-card.s-green .stat-num { color: var(--green); }
-.stat-card.s-grey .stat-num { color: var(--grey-400); }
-.stat-card.s-red .stat-num { color: #E53935; }
-.stat-card.s-yellow .stat-num { color: #F9A825; }
-
-.stat-label { font-size: 8.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; color: var(--grey-400); }
-
-/* Message cards */
-.message-list { display: flex; flex-direction: column; gap: 6px; }
-
-.msg-card {
-  background: var(--white);
-  border: 1px solid var(--grey-200);
-  border-radius: 14px;
-  padding: 14px 16px;
-  cursor: pointer;
-  transition: all 0.18s;
-  display: grid;
-  grid-template-columns: 36px 1fr auto;
-  gap: 12px;
-  align-items: center;
-  box-shadow: var(--shadow-sm);
-}
-.msg-card:hover { border-color: var(--purple); transform: translateX(3px); box-shadow: var(--shadow-md); }
-.msg-card.selected { border-color: var(--purple); background: var(--purple-light); }
-.msg-card.p-must { border-left: 3px solid #E53935; }
-.msg-card.p-dcf { border-left: 3px solid var(--purple); }
-.msg-card.p-skim { border-left: 3px solid #F9A825; }
-.msg-card.p-ignore { opacity: 0.45; }
-.msg-card.p-snoozed { opacity: 0.4; }
-
-.msg-icon {
-  width: 36px; height: 36px; border-radius: 10px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 16px; flex-shrink: 0;
-}
-.icon-gmail { background: #FEE8E7; }
-.icon-slack { background: #EFF9F6; }
-.icon-whatsapp { background: #E7F5EA; }
-.icon-calendar { background: var(--purple-light); }
-.icon-snowflake { background: #E3F2FD; }
-.icon-sf { background: #E8F4FE; }
-
-.msg-body { min-width: 0; }
-.msg-from { font-size: 12px; font-weight: 700; color: var(--black); margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.msg-subject { font-size: 11px; font-weight: 500; color: var(--grey-600); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 3px; }
-.msg-reason { font-size: 10px; font-weight: 600; color: var(--purple); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-.msg-right { text-align: right; flex-shrink: 0; }
-.msg-time { font-size: 10px; color: var(--grey-400); font-weight: 500; margin-bottom: 5px; }
-.msg-tags { display: flex; flex-direction: column; gap: 3px; align-items: flex-end; }
-.tag {
-  display: inline-block; font-size: 9px; font-weight: 700;
-  padding: 2px 7px; border-radius: 6px;
-}
-.tag-must { background: #FFEBEE; color: #E53935; }
-.tag-dcf { background: var(--purple-light); color: var(--purple); }
-.tag-skim { background: #FFFDE7; color: #F9A825; }
-.tag-ignore { background: var(--grey-100); color: var(--grey-400); }
-.tag-followup { background: var(--orange-light); color: var(--orange); }
-.tag-snoozed { background: var(--green-bg); color: var(--green); }
-.tag-channel { background: var(--grey-100); color: var(--grey-600); }
-
-/* Detail panel */
-#detail-panel {
-  background: var(--white);
-  border: 1px solid var(--grey-200);
-  border-radius: 14px;
-  padding: 20px;
-  margin-bottom: 12px;
-  box-shadow: var(--shadow-sm);
-  display: none;
-}
-.detail-subject { font-size: 16px; font-weight: 800; color: var(--black); margin-bottom: 8px; line-height: 1.3; }
-.detail-meta { display: flex; gap: 12px; flex-wrap: wrap; font-size: 11px; color: var(--grey-400); font-weight: 500; margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px solid var(--grey-200); }
-.detail-body { font-size: 12px; line-height: 1.8; color: var(--grey-600); white-space: pre-wrap; max-height: 240px; overflow-y: auto; margin-bottom: 14px; }
-.detail-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-
-/* Claude panel */
-#claude-panel {
-  background: var(--purple-light);
-  border: 1px solid rgba(61,61,170,0.15);
-  border-radius: 14px;
-  padding: 18px 20px;
-  margin-bottom: 12px;
-  display: none;
-}
-.claude-header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; font-size: 11px; font-weight: 800; color: var(--purple); text-transform: uppercase; letter-spacing: 1.5px; }
-.claude-body { font-size: 12px; line-height: 1.8; color: rgba(255,255,255,0.9); white-space: pre-wrap; }
-
-/* Draft panel */
-#draft-panel { background: var(--white); border: 1px solid var(--grey-200); border-radius: 14px; padding: 18px 20px; margin-bottom: 12px; display: none; box-shadow: var(--shadow-sm); }
-.draft-header { font-size: 8.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; color: var(--grey-400); margin-bottom: 10px; }
-textarea { width: 100%; background: var(--grey-50); border: 1px solid var(--grey-200); border-radius: 10px; padding: 14px; color: var(--black); font-family: 'Montserrat', sans-serif; font-size: 12px; line-height: 1.7; resize: vertical; min-height: 130px; outline: none; transition: border-color 0.2s; font-weight: 400; }
-textarea:focus { border-color: var(--purple); }
-
-/* Digest panel */
-#digest-panel { background: var(--white); border: 1px solid var(--grey-200); border-radius: 14px; padding: 20px; margin-bottom: 12px; box-shadow: var(--shadow-sm); display: none; }
-.digest-title { font-size: 14px; font-weight: 800; color: var(--purple); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
-
-/* Morning briefing */
-#briefing-panel { background: linear-gradient(135deg, var(--purple) 0%, var(--purple-dark) 100%); border-radius: 14px; padding: 20px 24px; margin-bottom: 16px; color: var(--white); display: none; }
-.briefing-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; opacity: 0.6; margin-bottom: 6px; }
-.briefing-summary { font-size: 13px; font-weight: 600; line-height: 1.6; margin-bottom: 14px; }
-.briefing-items { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
-.briefing-item { background: rgba(255,255,255,0.1); border-radius: 10px; padding: 10px 12px; border-left: 3px solid var(--orange); }
-.briefing-item-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; opacity: 0.6; margin-bottom: 4px; color: var(--white); }
-.briefing-item-val { font-size: 13px; font-weight: 700; color: var(--white); }
-
-/* Coming soon channels */
-.coming-soon-strip { background: var(--white); border: 1px solid var(--grey-200); border-radius: 14px; padding: 16px 20px; margin-bottom: 16px; box-shadow: var(--shadow-sm); }
-.cs-title { font-size: 8.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; color: var(--grey-400); margin-bottom: 12px; }
-.cs-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
-.cs-chip { border-radius: 10px; padding: 10px; text-align: center; border: 1px solid var(--grey-200); background: var(--grey-50); }
-.cs-chip .cs-icon { font-size: 20px; margin-bottom: 4px; }
-.cs-chip .cs-name { font-size: 10px; font-weight: 700; color: var(--grey-600); margin-bottom: 2px; }
-.cs-chip .cs-status { font-size: 9px; font-weight: 600; }
-.cs-chip.live { border-color: var(--green); background: var(--green-bg); }
-.cs-chip.live .cs-name { color: var(--green); }
-.cs-chip.live .cs-status { color: var(--green); }
-.cs-chip.soon .cs-status { color: var(--orange); }
-.cs-chip.planned .cs-status { color: var(--grey-400); }
-
-/* Snooze modal */
-#snooze-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: none; align-items: center; justify-content: center; z-index: 200; }
-.modal { background: var(--white); border-radius: 16px; padding: 24px; width: 300px; box-shadow: var(--shadow-md); }
-.modal-title { font-size: 14px; font-weight: 800; color: var(--black); margin-bottom: 14px; }
-.snooze-opts { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
-.snooze-opt { background: var(--grey-50); border: 1px solid var(--grey-200); border-radius: 8px; padding: 10px 14px; cursor: pointer; font-size: 12px; font-weight: 600; font-family: 'Montserrat', sans-serif; text-align: left; color: var(--grey-800); transition: all 0.15s; }
-.snooze-opt:hover { border-color: var(--green); color: var(--green); background: var(--green-bg); }
-
-/* Progress */
-.progress-wrap { height: 3px; background: var(--grey-200); border-radius: 2px; margin-bottom: 12px; display: none; overflow: hidden; }
-.progress-bar { height: 100%; background: linear-gradient(90deg, var(--purple), var(--orange)); border-radius: 2px; transition: width 0.4s; width: 0%; }
-
-/* Status */
-.status-bar { background: var(--purple-light); border: 1px solid rgba(61,61,170,0.15); border-radius: 8px; padding: 8px 14px; font-size: 11px; font-weight: 600; color: var(--purple); margin-bottom: 12px; display: none; }
-
-/* Empty state */
-.empty-state { text-align: center; padding: 60px 20px; color: var(--grey-400); font-size: 12px; font-weight: 500; }
-.empty-state .es-icon { font-size: 36px; margin-bottom: 12px; }
-
-/* Scrollbar */
-::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--grey-200); border-radius: 4px; }
-
-/* Loading */
-.loading { display: inline-flex; align-items: center; gap: 8px; color: var(--grey-400); font-size: 12px; font-weight: 500; }
-.spinner { width: 12px; height: 12px; border: 2px solid var(--grey-200); border-top-color: var(--purple); border-radius: 50%; animation: spin 0.8s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
-
-/* ── COMMAND STRIP ── */
-#command-strip {
-  background: linear-gradient(135deg, var(--purple) 0%, var(--purple-dark) 100%);
-  border-bottom: 1px solid rgba(255,255,255,0.08);
-  padding: 0 24px;
-  display: none;
-  flex-direction: column;
-  position: sticky;
-  top: 56px;
-  z-index: 90;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
-}
-
-.strip-top {
-  display: flex;
-  align-items: center;
-  gap: 0;
-  padding: 10px 0 8px;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
-}
-
-.strip-greeting {
-  color: var(--white);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: -0.2px;
-}
-
-.strip-greeting span { color: var(--orange); }
-
-.strip-date {
-  color: rgba(255,255,255,0.5);
-  font-size: 10px;
-  font-weight: 500;
-  margin-left: 10px;
-}
-
-.strip-ai-line {
-  margin-left: auto;
-  background: rgba(255,255,255,0.1);
-  border: 1px solid rgba(255,255,255,0.15);
-  border-radius: 20px;
-  padding: 4px 14px;
-  font-size: 11px;
-  font-weight: 600;
-  color: rgba(255,255,255,0.85);
-  max-width: 420px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-.strip-ai-line:hover { background: rgba(255,255,255,0.16); }
-.strip-ai-line.loading { color: rgba(255,255,255,0.4); }
-
-.strip-bottom {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 0;
-  overflow-x: auto;
-}
-
-.strip-pill {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  border-radius: 20px;
-  padding: 4px 12px;
-  font-size: 10px;
-  font-weight: 700;
-  white-space: nowrap;
-  flex-shrink: 0;
-  cursor: default;
-}
-
-.strip-pill.must { background: rgba(229,57,53,0.25); color: #FF8A80; border: 1px solid rgba(229,57,53,0.3); }
-.strip-pill.dcf { background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.9); border: 1px solid rgba(255,255,255,0.15); }
-.strip-pill.followup { background: rgba(255,81,0,0.25); color: #FFAB91; border: 1px solid rgba(255,81,0,0.3); }
-.strip-pill.triage { background: rgba(26,158,95,0.2); color: #69F0AE; border: 1px solid rgba(26,158,95,0.25); }
-.strip-pill.channel { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.5); border: 1px solid rgba(255,255,255,0.1); }
-.strip-pill.channel.live { background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.75); border-color: rgba(255,255,255,0.18); }
-
-.strip-divider { width: 1px; height: 18px; background: rgba(255,255,255,0.12); flex-shrink: 0; margin: 0 4px; }
-
-.strip-refresh {
-  margin-left: auto;
-  background: rgba(255,255,255,0.1);
-  border: 1px solid rgba(255,255,255,0.15);
-  border-radius: 20px;
-  padding: 4px 12px;
-  font-size: 10px;
-  font-weight: 700;
-  color: rgba(255,255,255,0.6);
-  cursor: pointer;
-  font-family: 'Montserrat', sans-serif;
-  transition: all 0.2s;
-  flex-shrink: 0;
-}
-.strip-refresh:hover { background: rgba(255,255,255,0.18); color: var(--white); }
-
-@media (max-width: 768px) {
-  .app-body { grid-template-columns: 1fr; }
-  .sidebar { display: none; }
-  .stats-strip { grid-template-columns: repeat(3, 1fr); }
-  .briefing-items { grid-template-columns: 1fr; }
-  .cs-grid { grid-template-columns: repeat(3, 1fr); }
-  .strip-ai-line { max-width: 200px; }
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Montserrat',sans-serif;background:var(--g100);color:var(--black);min-height:100vh;display:flex;flex-direction:column;}
+
+/* AUTH */
+#auth-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:40px 20px;}
+.auth-card{background:var(--white);border-radius:20px;box-shadow:var(--shadow-md);width:100%;max-width:440px;overflow:hidden;}
+.auth-hero{background:linear-gradient(135deg,var(--purple),var(--purple-dark));padding:36px;color:var(--white);}
+.auth-logo{display:flex;align-items:center;gap:8px;margin-bottom:20px;}
+.logo-pill{background:var(--orange);color:#fff;font-weight:800;font-size:12px;padding:4px 12px;border-radius:20px;}
+.auth-h1{font-size:26px;font-weight:800;letter-spacing:-0.5px;margin-bottom:6px;}
+.auth-h1 span{color:var(--orange);}
+.auth-sub{font-size:12px;opacity:0.7;line-height:1.6;}
+.auth-body{padding:24px 36px 32px;}
+.auth-chips{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:24px;}
+.auth-chip{background:var(--g100);border:1px solid var(--g200);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:8px;font-size:11px;font-weight:600;color:var(--g800);}
+.auth-chip.live{border-color:var(--green);background:var(--green-bg);color:var(--green);}
+.auth-chip.soon{border-color:var(--orange);background:var(--orange-light);color:var(--orange);}
+.auth-chip .ch-badge{margin-left:auto;font-size:9px;font-weight:700;}
+.btn-google{width:100%;background:linear-gradient(135deg,var(--purple),var(--purple-dark));color:#fff;border:none;border-radius:10px;padding:14px;font-family:'Montserrat',sans-serif;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;}
+
+/* APP */
+#app-screen{display:none;flex-direction:column;min-height:100vh;}
+
+/* TOPBAR */
+.topbar{background:linear-gradient(135deg,var(--purple),var(--purple-dark));padding:0 20px;height:52px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,0.15);}
+.tb-logo{display:flex;align-items:center;gap:7px;}
+.tb-pill{background:var(--orange);color:#fff;font-weight:800;font-size:11px;padding:3px 9px;border-radius:20px;}
+.tb-name{color:#fff;font-weight:700;font-size:14px;}
+.tb-channels{display:flex;gap:5px;margin-left:6px;}
+.ch-tag{display:flex;align-items:center;gap:4px;font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;}
+.ch-tag.on{background:rgba(255,255,255,0.15);color:#fff;}
+.ch-tag.off{background:rgba(255,81,0,0.15);color:rgba(255,255,255,0.5);}
+.ch-dot{width:5px;height:5px;border-radius:50%;background:var(--green);}
+.ch-dot.off{background:rgba(255,255,255,0.3);}
+.tb-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
+.tb-user{color:rgba(255,255,255,0.7);font-size:10px;font-weight:500;}
+.tb-timer{background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.8);font-size:10px;font-weight:600;padding:3px 9px;border-radius:20px;}
+.btn-signout{background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.2);border-radius:7px;padding:4px 11px;font-size:10px;font-weight:600;cursor:pointer;font-family:'Montserrat',sans-serif;}
+
+/* NAV TABS */
+.nav-tabs{background:var(--white);border-bottom:1px solid var(--g200);padding:0 20px;display:flex;gap:0;}
+.nav-tab{padding:11px 18px;font-size:11px;font-weight:700;color:var(--g400);cursor:pointer;border-bottom:2px solid transparent;transition:all 0.15s;white-space:nowrap;display:flex;align-items:center;gap:6px;}
+.nav-tab:hover{color:var(--purple);}
+.nav-tab.active{color:var(--purple);border-bottom-color:var(--purple);}
+.nav-tab .badge{background:var(--orange);color:#fff;font-size:9px;font-weight:700;padding:1px 6px;border-radius:10px;}
+.nav-tab .alert-dot{width:6px;height:6px;border-radius:50%;background:var(--red);}
+
+/* CONTENT */
+.content{flex:1;padding:16px 20px;overflow-y:auto;}
+
+/* ── HOME VIEW ── */
+/* Section headers */
+.section-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.section-title{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--g400);}
+.section-action{font-size:10px;font-weight:600;color:var(--purple);cursor:pointer;background:none;border:none;font-family:'Montserrat',sans-serif;}
+.section-block{margin-bottom:20px;}
+
+/* Alerts strip */
+.alerts-strip{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+.alert-chip{display:flex;align-items:center;gap:5px;padding:5px 11px;border-radius:8px;font-size:10px;font-weight:700;}
+.alert-chip.red{background:var(--red-bg);color:var(--red);border:1px solid rgba(211,47,47,0.15);}
+.alert-chip.warn{background:var(--yellow-bg);color:#B45309;border:1px solid rgba(249,168,37,0.2);}
+.alert-chip.ok{background:var(--green-bg);color:var(--green);border:1px solid rgba(26,158,95,0.15);}
+
+/* Business numbers */
+.biz-strip{display:grid;grid-template-columns:repeat(7,1fr);gap:10px;margin-bottom:20px;}
+.biz-card{background:var(--white);border:1px solid var(--g200);border-radius:12px;padding:12px 10px;box-shadow:var(--shadow);position:relative;overflow:hidden;}
+.biz-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.biz-card.c-orange::before{background:var(--orange);}
+.biz-card.c-purple::before{background:var(--purple);}
+.biz-card.c-green::before{background:var(--green);}
+.biz-card.c-red::before{background:var(--red);}
+.biz-card.c-blue::before{background:#1976D2;}
+.biz-card.c-teal::before{background:#00796B;}
+.biz-num{font-size:20px;font-weight:800;letter-spacing:-0.5px;margin-bottom:1px;}
+.biz-card.c-orange .biz-num{color:var(--orange);}
+.biz-card.c-purple .biz-num{color:var(--purple);}
+.biz-card.c-green .biz-num{color:var(--green);}
+.biz-card.c-red .biz-num{color:var(--red);}
+.biz-card.c-blue .biz-num{color:#1976D2;}
+.biz-card.c-teal .biz-num{color:#00796B;}
+.biz-label{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--g400);margin-bottom:3px;}
+.biz-sub{font-size:9px;font-weight:600;color:var(--g400);}
+.biz-delta{font-size:9px;font-weight:700;}
+.biz-delta.up{color:var(--green);}
+.biz-delta.down{color:var(--red);}
+
+/* Signal cards */
+.signals-grid{display:flex;flex-direction:column;gap:8px;}
+.signal-card{background:var(--white);border:1px solid var(--g200);border-radius:12px;padding:14px 16px;box-shadow:var(--shadow);transition:all 0.15s;}
+.signal-card:hover{border-color:var(--purple);box-shadow:var(--shadow-md);}
+.signal-card.priority-must{border-left:3px solid var(--red);}
+.signal-card.priority-dcf{border-left:3px solid var(--purple);}
+.signal-card.priority-skim{border-left:3px solid var(--yellow);}
+.signal-top{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.signal-channel{font-size:9px;font-weight:700;padding:2px 7px;border-radius:5px;background:var(--g100);color:var(--g600);}
+.signal-priority{font-size:9px;font-weight:700;padding:2px 7px;border-radius:5px;}
+.signal-priority.must{background:var(--red-bg);color:var(--red);}
+.signal-priority.dcf{background:var(--purple-light);color:var(--purple);}
+.signal-time{margin-left:auto;font-size:10px;color:var(--g400);font-weight:500;}
+.signal-from{font-size:12px;font-weight:700;color:var(--black);margin-bottom:2px;}
+.signal-subject{font-size:11px;font-weight:500;color:var(--g600);margin-bottom:4px;}
+.signal-reason{font-size:10px;font-weight:600;color:var(--purple);}
+.signal-actions{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;}
+.sa-btn{font-size:10px;font-weight:700;padding:5px 12px;border-radius:7px;cursor:pointer;border:none;font-family:'Montserrat',sans-serif;transition:all 0.15s;}
+.sa-primary{background:var(--purple);color:#fff;}
+.sa-secondary{background:var(--g100);color:var(--g800);border:1px solid var(--g200);}
+.sa-secondary:hover{border-color:var(--purple);color:var(--purple);}
+
+/* Reply box */
+.reply-box{margin-top:10px;display:none;background:var(--g50);border:1px solid var(--g200);border-radius:10px;padding:10px;}
+.reply-box.open{display:block;}
+.reply-textarea{width:100%;border:1px solid var(--g200);border-radius:8px;padding:10px;font-family:'Montserrat',sans-serif;font-size:11px;line-height:1.6;resize:vertical;min-height:90px;outline:none;background:#fff;}
+.reply-textarea:focus{border-color:var(--purple);}
+.reply-actions{display:flex;gap:6px;margin-top:8px;align-items:center;}
+.reply-note{font-size:9px;color:var(--g400);margin-left:auto;}
+
+/* ── MIS VIEW ── */
+.mis-loading{text-align:center;padding:40px;color:var(--g400);}
+.mis-spinner{width:32px;height:32px;border:3px solid var(--g200);border-top-color:var(--purple);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 12px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.mis-status-text{font-size:12px;font-weight:600;}
+
+/* MIS tables */
+.mis-table{width:100%;border-collapse:collapse;font-size:11px;}
+.mis-table th{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--g400);padding:7px 8px;text-align:right;border-bottom:1px solid var(--g200);background:var(--g50);white-space:nowrap;}
+.mis-table th:first-child{text-align:left;}
+.mis-table th.grp{background:var(--purple-light);color:var(--purple);text-align:center;font-size:8px;}
+.mis-table td{font-size:11px;font-weight:500;color:var(--g600);padding:6px 8px;border-bottom:1px solid var(--g100);text-align:right;white-space:nowrap;}
+.mis-table td:first-child{text-align:left;font-weight:600;color:var(--black);}
+.mis-table tr.total td{background:var(--purple-light);font-weight:700;color:var(--purple);}
+.mis-table tr.alert-r td{background:var(--red-bg);}
+.mis-table tr.sm-r td:first-child{padding-left:16px;font-size:10px;color:var(--g800);}
+.mis-table tr.dealer-r td:first-child{padding-left:24px;font-size:10px;color:var(--g600);font-weight:500;}
+.num{font-weight:700;color:var(--black);}
+.up{color:var(--green);font-size:10px;font-weight:700;}
+.dn{color:var(--red);font-size:10px;font-weight:700;}
+.fl{color:var(--g400);font-size:10px;}
+.pg{color:var(--green);font-weight:700;}
+.pw{color:var(--yellow);font-weight:700;}
+.pb{color:var(--red);font-weight:700;}
+.gc-ok{display:inline-block;font-size:9px;font-weight:700;padding:2px 6px;border-radius:5px;background:var(--green-bg);color:var(--green);}
+.gc-bad{display:inline-block;font-size:9px;font-weight:700;padding:2px 6px;border-radius:5px;background:var(--red-bg);color:var(--red);}
+.ab{display:inline-block;font-size:8px;font-weight:700;padding:1px 5px;border-radius:4px;background:var(--red-bg);color:var(--red);margin-left:3px;vertical-align:middle;}
+.exp{cursor:pointer;color:var(--purple);font-size:10px;margin-right:4px;user-select:none;}
+.sub-body{display:none;}
+.sub-body.open{display:table-row-group;}
+
+/* Card wrapper */
+.card{background:var(--white);border:1px solid var(--g200);border-radius:14px;box-shadow:var(--shadow);overflow:hidden;margin-bottom:14px;}
+.card-hdr{padding:12px 16px;border-bottom:1px solid var(--g200);display:flex;align-items:center;justify-content:space-between;}
+.card-title{font-size:12px;font-weight:700;color:var(--black);}
+.card-badge{font-size:9px;font-weight:700;padding:3px 8px;border-radius:8px;background:var(--purple-light);color:var(--purple);}
+
+/* SHARE MODAL */
+#share-modal{position:fixed;inset:0;background:rgba(0,0,0,0.4);display:none;align-items:center;justify-content:center;z-index:200;}
+#share-modal.open{display:flex;}
+.modal-box{background:#fff;border-radius:16px;padding:24px;width:420px;box-shadow:var(--shadow-md);}
+.modal-title{font-size:14px;font-weight:800;color:var(--black);margin-bottom:4px;}
+.modal-sub{font-size:11px;color:var(--g400);margin-bottom:16px;}
+.teammate-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;}
+.teammate-chip{display:flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--g200);border-radius:10px;cursor:pointer;transition:all 0.15s;}
+.teammate-chip.selected{border-color:var(--purple);background:var(--purple-light);}
+.teammate-chip input{display:none;}
+.teammate-name{font-size:11px;font-weight:700;color:var(--black);}
+.teammate-role{font-size:9px;color:var(--g400);font-weight:500;}
+.share-via{display:flex;gap:8px;margin-bottom:16px;}
+.via-btn{flex:1;padding:8px;border:1px solid var(--g200);border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;background:#fff;font-family:'Montserrat',sans-serif;text-align:center;transition:all 0.15s;}
+.via-btn.selected{background:var(--purple);color:#fff;border-color:var(--purple);}
+.modal-actions{display:flex;gap:8px;}
+
+/* Generic btn */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;font-family:'Montserrat',sans-serif;font-size:11px;font-weight:700;cursor:pointer;border:none;transition:all 0.15s;}
+.btn-orange{background:var(--orange);color:#fff;}
+.btn-purple{background:var(--purple);color:#fff;}
+.btn-outline{background:var(--white);color:var(--g800);border:1px solid var(--g200);}
+.btn-outline:hover{border-color:var(--purple);color:var(--purple);}
+.btn-sm{padding:5px 12px;font-size:10px;}
+
+/* Empty */
+.empty{text-align:center;padding:48px 20px;color:var(--g400);}
+.empty-icon{font-size:36px;margin-bottom:10px;}
+.empty-title{font-size:14px;font-weight:700;color:var(--black);margin-bottom:6px;}
+.empty-sub{font-size:11px;line-height:1.6;max-width:340px;margin:0 auto;}
+
+/* Loading bar */
+.prog-bar{height:3px;background:var(--g200);overflow:hidden;display:none;}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--purple),var(--orange));transition:width 0.3s;width:0%;}
+
+/* Status bar */
+.status-bar{background:var(--purple-light);border-bottom:1px solid rgba(61,61,170,0.1);padding:8px 20px;font-size:11px;font-weight:600;color:var(--purple);display:none;}
+
+@media(max-width:1024px){
+  .biz-strip{grid-template-columns:repeat(4,1fr);}
+  .tb-channels{display:none;}
 }
 </style>
 </head>
@@ -572,26 +221,19 @@ textarea:focus { border-color: var(--purple); }
 <div id="auth-screen">
   <div class="auth-card">
     <div class="auth-hero">
-      <div class="auth-logo">
-        <span class="logo-pill">CARS24</span>
-        <span class="logo-text">Loans24 · DCF</span>
-      </div>
-      <h1>Shivi<span>-twin</span></h1>
-      <p>Your AI chief of staff — reads every channel, triages everything, tells you exactly what needs you today.</p>
+      <div class="auth-logo"><span class="logo-pill">CARS24</span><span style="color:rgba(255,255,255,0.8);font-size:13px;font-weight:600">Loans24 · DCF</span></div>
+      <div class="auth-h1">Shivi<span>-twin</span></div>
+      <div class="auth-sub">Your AI chief of staff — business numbers, critical actions, and signals across every channel.</div>
     </div>
     <div class="auth-body">
-      <div class="channel-grid">
-        <div class="channel-chip live"><span class="ch-icon">✉️</span>Gmail<span class="ch-badge">LIVE</span></div>
-        <div class="channel-chip soon"><span class="ch-icon">💬</span>Slack<span class="ch-badge">SOON</span></div>
-        <div class="channel-chip soon"><span class="ch-icon">📱</span>WhatsApp<span class="ch-badge">SOON</span></div>
-        <div class="channel-chip"><span class="ch-icon">❄️</span>Snowflake<span class="ch-badge">Q2</span></div>
-        <div class="channel-chip"><span class="ch-icon">📅</span>Calendar<span class="ch-badge">Q2</span></div>
-        <div class="channel-chip"><span class="ch-icon">☁️</span>Salesforce<span class="ch-badge">Q2</span></div>
-        <div class="channel-chip"><span class="ch-icon">📊</span>Tableau<span class="ch-badge">Q3</span></div>
-        <div class="channel-chip"><span class="ch-icon">🔗</span>LinkedIn<span class="ch-badge">Q3</span></div>
+      <div class="auth-chips">
+        <div class="auth-chip live">✉️ Gmail<span class="ch-badge">LIVE</span></div>
+        <div class="auth-chip live">📊 DCF MIS<span class="ch-badge">LIVE</span></div>
+        <div class="auth-chip soon">💬 Slack<span class="ch-badge">SOON</span></div>
+        <div class="auth-chip soon">📱 WhatsApp<span class="ch-badge">SOON</span></div>
       </div>
       <button class="btn-google" onclick="startAuth()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#fff"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#fff"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#fff"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#fff"/></svg>
+        <svg width="14" height="14" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#fff"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#fff"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#fff"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#fff"/></svg>
         Connect Gmail to Start
       </button>
     </div>
@@ -600,296 +242,147 @@ textarea:focus { border-color: var(--purple); }
 
 <!-- APP -->
 <div id="app-screen">
-
   <!-- Topbar -->
   <div class="topbar">
-    <div class="topbar-logo">
-      <span class="topbar-pill">ST</span>
-      <span class="topbar-name">Shivi-twin</span>
+    <div class="tb-logo"><span class="tb-pill">ST</span><span class="tb-name">Shivi-twin</span></div>
+    <div class="tb-channels">
+      <span class="ch-tag on"><span class="ch-dot"></span>Gmail</span>
+      <span class="ch-tag on"><span class="ch-dot"></span>MIS</span>
+      <span class="ch-tag off"><span class="ch-dot off"></span>Slack</span>
+      <span class="ch-tag off"><span class="ch-dot off"></span>WhatsApp</span>
     </div>
-    <div class="topbar-channels">
-      <span class="ch-tag connected"><span class="ch-dot"></span>Gmail</span>
-      <span class="ch-tag pending"><span class="ch-dot off"></span>Slack</span>
-      <span class="ch-tag pending"><span class="ch-dot off"></span>WhatsApp</span>
-      <span class="ch-tag pending"><span class="ch-dot off"></span>Calendar</span>
-      <span class="ch-tag pending"><span class="ch-dot off"></span>Snowflake</span>
-    </div>
-    <div class="topbar-right">
-      <span class="timer-tag" id="timer-tag" style="display:none">🔄 <span id="timer-val">3:00:00</span></span>
-      <span class="user-tag" id="user-tag"></span>
+    <div class="tb-right">
+      <span class="tb-timer" id="timer-tag" style="display:none">🔄 <span id="timer-val">3:00:00</span></span>
+      <span class="tb-user" id="user-tag"></span>
       <button class="btn-signout" onclick="signOut()">Sign out</button>
     </div>
   </div>
 
-  <!-- Command Strip -->
-  <div id="command-strip">
-    <div class="strip-top">
-      <span class="strip-greeting">☀️ Good morning, <span>Shivi</span></span>
-      <span class="strip-date" id="strip-date"></span>
-      <div class="strip-ai-line loading" id="strip-ai" onclick="refreshStripAI()">✦ Generating your daily read...</div>
+  <!-- Nav tabs -->
+  <div class="nav-tabs">
+    <div class="nav-tab active" id="tab-home" onclick="switchTab('home')">🏠 Home</div>
+    <div class="nav-tab" id="tab-must" onclick="switchTab('must')">🔴 Must Act <span class="badge" id="must-badge" style="display:none">0</span></div>
+    <div class="nav-tab" id="tab-mis" onclick="switchTab('mis')">📊 DCF MIS</div>
+    <div class="nav-tab" id="tab-gmail" onclick="switchTab('gmail')">✉️ Gmail <span class="badge" id="gmail-badge" style="display:none">0</span></div>
+  </div>
+
+  <!-- Progress + Status -->
+  <div class="prog-bar" id="prog-bar"><div class="prog-fill" id="prog-fill"></div></div>
+  <div class="status-bar" id="status-bar"></div>
+
+  <!-- HOME VIEW -->
+  <div class="content" id="view-home">
+
+    <!-- Section 1: Business Numbers -->
+    <div class="section-block">
+      <div class="section-hdr">
+        <span class="section-title">📊 Business Numbers — MTD vs LMTD</span>
+        <button class="section-action" onclick="switchTab('mis')">Full MIS →</button>
+      </div>
+      <div class="biz-strip" id="biz-strip">
+        <div class="biz-card c-orange"><div class="biz-label">Disbursals</div><div class="biz-num" id="b-disb">—</div><div class="biz-sub" id="b-disb-sub">Loading...</div></div>
+        <div class="biz-card c-purple"><div class="biz-label">GMV</div><div class="biz-num" id="b-gmv">—</div><div class="biz-sub" id="b-gmv-sub">Loading...</div></div>
+        <div class="biz-card c-blue"><div class="biz-label">Leads</div><div class="biz-num" id="b-leads">—</div><div class="biz-sub" id="b-leads-sub">Loading...</div></div>
+        <div class="biz-card c-teal"><div class="biz-label">Logins</div><div class="biz-num" id="b-logins">—</div><div class="biz-sub" id="b-logins-sub">Loading...</div></div>
+        <div class="biz-card c-green" id="b-l2l-card"><div class="biz-label">L2L%</div><div class="biz-num" id="b-l2l">—</div><div class="biz-sub">Threshold: 45%</div></div>
+        <div class="biz-card c-green" id="b-a2d-card"><div class="biz-label">A2D%</div><div class="biz-num" id="b-a2d">—</div><div class="biz-sub">Threshold: 40%</div></div>
+        <div class="biz-card c-green" id="b-gc-card"><div class="biz-label">GC Share</div><div class="biz-num" id="b-gc">—</div><div class="biz-sub">Threshold: 55%</div></div>
+      </div>
     </div>
-    <div class="strip-bottom">
-      <div class="strip-pill must" id="sp-must">🔴 — must act</div>
-      <div class="strip-pill dcf" id="sp-dcf">💜 — DCF signals</div>
-      <div class="strip-pill followup" id="sp-followup">📌 — follow-ups</div>
-      <div class="strip-pill triage" id="sp-triage">🔄 next triage in —</div>
-      <div class="strip-divider"></div>
-      <div class="strip-pill channel live">✉️ Gmail live</div>
-      <div class="strip-pill channel">💬 Slack soon</div>
-      <div class="strip-pill channel">📱 WhatsApp soon</div>
-      <div class="strip-pill channel">📅 Calendar Q2</div>
-      <div class="strip-pill channel">❄️ Snowflake Q2</div>
-      <div class="strip-pill channel">☁️ Salesforce Q2</div>
-      <button class="strip-refresh" onclick="refreshStrip()">↻ Refresh</button>
+
+    <!-- Section 2: Critical Actionables -->
+    <div class="section-block">
+      <div class="section-hdr">
+        <span class="section-title">🚨 Critical Actionables</span>
+        <button class="section-action" onclick="openShare()">📤 Share Report</button>
+      </div>
+      <div id="alerts-strip" class="alerts-strip">
+        <span class="alert-chip ok">✓ Loading MIS data...</span>
+      </div>
+    </div>
+
+    <!-- Section 3: Email Highlights -->
+    <div class="section-block">
+      <div class="section-hdr">
+        <span class="section-title">✉️ Important Emails</span>
+        <button class="section-action" onclick="switchTab('gmail')">All Gmail →</button>
+      </div>
+      <div class="signals-grid" id="email-signals">
+        <div class="empty"><div class="empty-icon">✉️</div><div class="empty-title">Loading emails...</div></div>
+      </div>
+    </div>
+
+    <!-- Section 4: Slack -->
+    <div class="section-block">
+      <div class="section-hdr"><span class="section-title">💬 Slack</span></div>
+      <div class="empty" style="padding:24px;background:var(--white);border-radius:12px;border:1px solid var(--g200)">
+        <div style="font-size:11px;color:var(--g400);font-weight:500">Slack integration coming soon</div>
+      </div>
+    </div>
+
+    <!-- Section 5: WhatsApp -->
+    <div class="section-block">
+      <div class="section-hdr"><span class="section-title">📱 WhatsApp</span></div>
+      <div class="empty" style="padding:24px;background:var(--white);border-radius:12px;border:1px solid var(--g200)">
+        <div style="font-size:11px;color:var(--g400);font-weight:500">WhatsApp integration coming soon</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- MUST ACT VIEW -->
+  <div class="content" id="view-must" style="display:none">
+    <div class="signals-grid" id="must-signals">
+      <div class="empty"><div class="empty-icon">🔴</div><div class="empty-title">Run triage to see must-act items</div></div>
     </div>
   </div>
 
-  <div class="app-body">
-
-    <!-- Sidebar -->
-    <div class="sidebar">
-      <div class="sidebar-section">
-        <div class="sidebar-label">Command</div>
-        <div class="nav-item active" onclick="setView('inbox', this)"><span class="nav-icon">📥</span>All Signals<span class="nav-count" id="nc-all">—</span></div>
-        <div class="nav-item" onclick="showBriefing();setView('briefing',this)"><span class="nav-icon">☀️</span>Daily Briefing</div>
-      </div>
-      <div class="sidebar-divider"></div>
-      <div class="sidebar-section">
-        <div class="sidebar-label">Priority</div>
-        <div class="nav-item" onclick="setView('must', this)"><span class="nav-icon">🔴</span>Must Act<span class="nav-count" id="nc-must">—</span></div>
-        <div class="nav-item" onclick="setView('dcf', this)"><span class="nav-icon">💜</span>DCF<span class="nav-count purple" id="nc-dcf">—</span></div>
-        <div class="nav-item" onclick="setView('skim', this)"><span class="nav-icon">🟡</span>Skim<span class="nav-count grey" id="nc-skim">—</span></div>
-        <div class="nav-item" onclick="setView('ignore', this)"><span class="nav-icon">⚪</span>Ignore<span class="nav-count grey" id="nc-ignore">—</span></div>
-      </div>
-      <div class="sidebar-divider"></div>
-      <div class="sidebar-section">
-        <div class="sidebar-label">Track</div>
-        <div class="nav-item" onclick="setView('followup', this)"><span class="nav-icon">📌</span>Follow-ups<span class="nav-count" id="nc-followup">—</span></div>
-        <div class="nav-item" onclick="setView('snoozed', this)"><span class="nav-icon">⏰</span>Snoozed<span class="nav-count green" id="nc-snoozed">—</span></div>
-      </div>
-      <div class="sidebar-divider"></div>
-      <div class="sidebar-section">
-        <div class="sidebar-label">Analytics</div>
-        <div class="nav-item" onclick="setView('mis', this)"><span class="nav-icon">📊</span>DCF MIS</div>
-      </div>
-      <div class="sidebar-divider"></div>
-      <div class="sidebar-section">
-        <div class="sidebar-label">Channels</div>
-        <div class="nav-item" onclick="setView('gmail', this)"><span class="nav-icon">✉️</span>Gmail</div>
-        <div class="nav-item" style="opacity:0.4;cursor:default"><span class="nav-icon">💬</span>Slack <span style="font-size:9px;color:var(--orange);margin-left:4px">Soon</span></div>
-        <div class="nav-item" style="opacity:0.4;cursor:default"><span class="nav-icon">📱</span>WhatsApp <span style="font-size:9px;color:var(--orange);margin-left:4px">Soon</span></div>
-        <div class="nav-item" style="opacity:0.4;cursor:default"><span class="nav-icon">📅</span>Calendar <span style="font-size:9px;color:var(--grey-400);margin-left:4px">Q2</span></div>
-        <div class="nav-item" style="opacity:0.4;cursor:default"><span class="nav-icon">❄️</span>Snowflake <span style="font-size:9px;color:var(--grey-400);margin-left:4px">Q2</span></div>
-        <div class="nav-item" style="opacity:0.4;cursor:default"><span class="nav-icon">☁️</span>Salesforce <span style="font-size:9px;color:var(--grey-400);margin-left:4px">Q2</span></div>
-        <div class="nav-item" style="opacity:0.4;cursor:default"><span class="nav-icon">📊</span>Tableau <span style="font-size:9px;color:var(--grey-400);margin-left:4px">Q3</span></div>
-        <div class="nav-item" style="opacity:0.4;cursor:default"><span class="nav-icon">🔗</span>LinkedIn <span style="font-size:9px;color:var(--grey-400);margin-left:4px">Q3</span></div>
-        <div class="nav-item" style="opacity:0.4;cursor:default"><span class="nav-icon">🐦</span>Twitter/X <span style="font-size:9px;color:var(--grey-400);margin-left:4px">Q3</span></div>
-        <div class="nav-item" style="opacity:0.4;cursor:default"><span class="nav-icon">🎥</span>Zoom <span style="font-size:9px;color:var(--grey-400);margin-left:4px">Q3</span></div>
-      </div>
+  <!-- MIS VIEW -->
+  <div class="content" id="view-mis" style="display:none">
+    <div class="mis-loading" id="mis-loading" style="display:none">
+      <div class="mis-spinner"></div>
+      <div class="mis-status-text" id="mis-status-text">Loading MIS...</div>
     </div>
+    <div id="mis-content"></div>
+  </div>
 
-    <!-- Content -->
-    <div class="content">
-
-      <!-- Action bar -->
-      <div class="action-bar" id="action-bar-main">
-        <button class="btn btn-orange" onclick="runTriage()">✦ Run Triage</button>
-        <button class="btn btn-purple" onclick="showBriefing()">☀️ Daily Briefing</button>
-        <button class="btn btn-outline" onclick="loadEmails(50)" title="Refresh inbox">↻</button>
-        <button class="btn btn-outline" onclick="applyLabels()">🏷️ Label Gmail</button>
-        <div style="margin-left:auto;position:relative">
-          <button class="btn btn-outline" onclick="toggleOverflow()">··· More</button>
-          <div id="overflow-menu" style="display:none;position:absolute;right:0;top:36px;background:var(--white);border:1px solid var(--grey-200);border-radius:10px;box-shadow:var(--shadow-md);z-index:50;min-width:160px;padding:6px;">
-            <div onclick="applyLabels();toggleOverflow()" style="padding:8px 14px;font-size:11px;font-weight:600;cursor:pointer;border-radius:6px;color:var(--grey-800)" onmouseover="this.style.background='var(--grey-100)'" onmouseout="this.style.background='transparent'">🏷️ Label in Gmail</div>
-            <div onclick="openSnooze();toggleOverflow()" style="padding:8px 14px;font-size:11px;font-weight:600;cursor:pointer;border-radius:6px;color:var(--grey-800)" onmouseover="this.style.background='var(--grey-100)'" onmouseout="this.style.background='transparent'">⏰ Snooze selected</div>
-            <div onclick="clearTriageCache();toggleOverflow()" style="padding:8px 14px;font-size:11px;font-weight:600;cursor:pointer;border-radius:6px;color:var(--grey-800)" onmouseover="this.style.background='var(--grey-100)'" onmouseout="this.style.background='transparent'">🗑️ Clear triage cache</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Progress -->
-      <div class="progress-wrap" id="progress-wrap"><div class="progress-bar" id="progress-bar"></div></div>
-      <div class="status-bar" id="status-bar"></div>
-
-      <!-- Stats -->
-      <div class="stats-strip" id="stats-strip-main">
-        <div class="stat-card s-red"><div class="stat-num" id="s-must">—</div><div class="stat-label">Must Act</div></div>
-        <div class="stat-card s-purple"><div class="stat-num" id="s-dcf">—</div><div class="stat-label">DCF</div></div>
-        <div class="stat-card s-yellow"><div class="stat-num" id="s-skim">—</div><div class="stat-label">Skim</div></div>
-        <div class="stat-card s-grey"><div class="stat-num" id="s-ignore">—</div><div class="stat-label">Ignore</div></div>
-        <div class="stat-card s-orange"><div class="stat-num" id="s-followup">—</div><div class="stat-label">Follow-ups</div></div>
-        <div class="stat-card s-green"><div class="stat-num" id="s-snoozed">—</div><div class="stat-label">Snoozed</div></div>
-      </div>
-
-      <!-- Daily Briefing panel -->
-      <div id="briefing-panel" style="display:none">
-        <div class="briefing-title">☀️ Daily Briefing</div>
-        <div class="briefing-summary" id="briefing-summary">Generating your briefing...</div>
-        <div class="briefing-items" id="briefing-items"></div>
-        <div class="claude-body" id="digest-body" style="margin-top:16px;padding-top:16px;border-top:1px solid rgba(255,255,255,0.15)"></div>
-      </div>
-
-      <!-- Message list -->
-      <div class="message-list" id="message-list">
-        <div class="empty-state">
-          <div class="es-icon">✦</div>
-          Click <strong>Run Triage</strong> to let Claude analyze your inbox
-        </div>
-      </div>
-
-      <!-- Detail panel -->
-      <div id="detail-panel">
-        <div class="detail-subject" id="d-subject"></div>
-        <div class="detail-meta">
-          <span id="d-from"></span>
-          <span id="d-date"></span>
-          <span id="d-priority"></span>
-        </div>
-        <div class="detail-body" id="d-body"></div>
-        <div class="detail-actions">
-          <button class="btn btn-purple" onclick="summarize()">✦ Summarize</button>
-          <button class="btn btn-outline" onclick="draftReply()">✦ Draft Reply</button>
-          <button class="btn btn-outline" onclick="autoReply()">⚡ Auto-Reply</button>
-          <button class="btn btn-green" onclick="openSnooze()">⏰ Snooze</button>
-          <button class="btn btn-outline" onclick="toggleFollowUp()">📌 Follow-up</button>
-        </div>
-      </div>
-
-      <!-- Claude panel -->
-      <div id="claude-panel">
-        <div class="claude-header">✦ Claude's Analysis</div>
-        <div class="claude-body" id="claude-body"></div>
-      </div>
-
-      <!-- DCF MIS Panel -->
-      <div id="mis-panel" style="display:none">
-
-        <!-- MIS Action bar -->
-        <div class="action-bar" style="margin-bottom:16px;flex-wrap:wrap;gap:10px">
-          <div style="font-family:'Montserrat',sans-serif;font-size:13px;font-weight:700;color:var(--black)">📊 DCF MIS</div>
-          <input id="mis-sheet-url" style="flex:1;min-width:200px;max-width:380px;border:1px solid var(--grey-200);border-radius:8px;padding:8px 12px;font-family:'Montserrat',sans-serif;font-size:11px;outline:none" 
-            placeholder="Paste Google Sheet URL..." 
-            value="https://docs.google.com/spreadsheets/d/17Uktk9crbcF-rps1SSVfAQmwkRb3Vhl1t717IQvw8qI/edit?gid=2122627395#gid=2122627395">
-          <button class="btn btn-outline" onclick="fetchSheetTabs()" style="white-space:nowrap">🔍 Get Tabs</button>
-          <select id="mis-tab-select" style="border:1px solid var(--grey-200);border-radius:8px;padding:8px 12px;font-family:'Montserrat',sans-serif;font-size:11px;outline:none;display:none;min-width:160px">
-            <option value="">Select sheet tab...</option>
-          </select>
-          <button class="btn btn-orange" onclick="loadMIS()" style="white-space:nowrap">Load MIS</button>
-          <button class="btn btn-outline" onclick="loadMIS()" id="mis-refresh-btn" style="display:none">↻ Refresh</button>
-        </div>
-
-        <!-- MIS Filters -->
-        <div id="mis-filters" style="display:none;background:var(--white);border:1px solid var(--grey-200);border-radius:12px;padding:12px 16px;margin-bottom:14px;display:none;align-items:center;gap:12px;flex-wrap:wrap">
-          <span style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--grey-400)">Month</span>
-          <div id="mis-month-filters" style="display:flex;gap:6px;flex-wrap:wrap"></div>
-          <div style="width:1px;height:20px;background:var(--grey-200)"></div>
-          <span style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--grey-400)">Region</span>
-          <div id="mis-region-filters" style="display:flex;gap:6px;flex-wrap:wrap"></div>
-          <div style="width:1px;height:20px;background:var(--grey-200)"></div>
-          <span style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--grey-400)">Channel</span>
-          <div id="mis-channel-filters" style="display:flex;gap:6px;flex-wrap:wrap"></div>
-        </div>
-
-        <!-- MIS Status -->
-        <div id="mis-status" style="display:none;background:var(--purple-light);border:1px solid rgba(61,61,170,0.15);border-radius:8px;padding:8px 14px;font-size:11px;font-weight:600;color:var(--purple);margin-bottom:12px"></div>
-
-        <!-- MIS Empty -->
-        <div id="mis-empty" style="text-align:center;padding:60px 20px;color:var(--grey-400)">
-          <div style="font-size:36px;margin-bottom:12px">📊</div>
-          <div style="font-size:14px;font-weight:700;color:var(--black);margin-bottom:8px">DCF MIS Dashboard</div>
-          <div style="font-size:12px;font-weight:500;line-height:1.6">Paste your Google Sheet URL above and click Load MIS</div>
-        </div>
-
-        <!-- MIS Dashboard -->
-        <div id="mis-dashboard" style="display:none">
-
-          <!-- KPI Strip -->
-          <div id="mis-kpi" style="display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:16px"></div>
-
-          <!-- Funnel -->
-          <div style="background:var(--white);border:1px solid var(--grey-200);border-radius:14px;box-shadow:0 1px 4px rgba(0,0,0,0.08);overflow:hidden;margin-bottom:16px">
-            <div style="padding:14px 18px;border-bottom:1px solid var(--grey-200);display:flex;align-items:center;justify-content:space-between">
-              <span style="font-size:12px;font-weight:700">Loan Origination Funnel</span>
-              <span id="mis-funnel-badge" style="font-size:9px;font-weight:700;padding:3px 8px;border-radius:10px;background:var(--purple-light);color:var(--purple)"></span>
-            </div>
-            <div id="mis-funnel" style="display:flex"></div>
-          </div>
-
-          <!-- Charts Row 1 -->
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
-            <div style="background:var(--white);border:1px solid var(--grey-200);border-radius:14px;box-shadow:0 1px 4px rgba(0,0,0,0.08);overflow:hidden">
-              <div style="padding:14px 18px;border-bottom:1px solid var(--grey-200);display:flex;align-items:center;justify-content:space-between">
-                <span style="font-size:12px;font-weight:700">Channel Mix — Disbursals</span>
-                <span id="mis-ch-badge" style="font-size:9px;font-weight:700;padding:3px 8px;border-radius:10px;background:var(--orange-light);color:var(--orange)"></span>
-              </div>
-              <div id="mis-channel-chart" style="padding:16px 18px"></div>
-            </div>
-            <div style="background:var(--white);border:1px solid var(--grey-200);border-radius:14px;box-shadow:0 1px 4px rgba(0,0,0,0.08);overflow:hidden">
-              <div style="padding:14px 18px;border-bottom:1px solid var(--grey-200)">
-                <span style="font-size:12px;font-weight:700">Region Split</span>
-              </div>
-              <div id="mis-region-chart" style="padding:16px 18px"></div>
-            </div>
-          </div>
-
-          <!-- Charts Row 2 -->
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px">
-            <div style="background:var(--white);border:1px solid var(--grey-200);border-radius:14px;box-shadow:0 1px 4px rgba(0,0,0,0.08);overflow:hidden">
-              <div style="padding:14px 18px;border-bottom:1px solid var(--grey-200)"><span style="font-size:12px;font-weight:700">Green / Amber / Red</span></div>
-              <div id="mis-ds-chart" style="padding:16px 18px"></div>
-            </div>
-            <div style="background:var(--white);border:1px solid var(--grey-200);border-radius:14px;box-shadow:0 1px 4px rgba(0,0,0,0.08);overflow:hidden">
-              <div style="padding:14px 18px;border-bottom:1px solid var(--grey-200)"><span style="font-size:12px;font-weight:700">Risk Bucket</span></div>
-              <div id="mis-risk-chart" style="padding:16px 18px"></div>
-            </div>
-            <div style="background:var(--white);border:1px solid var(--grey-200);border-radius:14px;box-shadow:0 1px 4px rgba(0,0,0,0.08);overflow:hidden">
-              <div style="padding:14px 18px;border-bottom:1px solid var(--grey-200)"><span style="font-size:12px;font-weight:700">Book Type</span></div>
-              <div id="mis-book-chart" style="padding:16px 18px"></div>
-            </div>
-          </div>
-
-          <!-- Monthly Table -->
-          <div style="background:var(--white);border:1px solid var(--grey-200);border-radius:14px;box-shadow:0 1px 4px rgba(0,0,0,0.08);overflow:hidden;margin-bottom:16px">
-            <div style="padding:14px 18px;border-bottom:1px solid var(--grey-200);display:flex;align-items:center;justify-content:space-between">
-              <span style="font-size:12px;font-weight:700">Month-wise Performance</span>
-              <span style="font-size:9px;font-weight:700;padding:3px 8px;border-radius:10px;background:var(--purple-light);color:var(--purple)">GMV in ₹ Cr</span>
-            </div>
-            <div style="overflow-x:auto"><table id="mis-monthly-table" style="width:100%;border-collapse:collapse"></table></div>
-          </div>
-
-        </div>
-      </div>
-
-      <!-- Draft panel -->
-      <div id="draft-panel">
-        <div class="draft-header">Draft Reply</div>
-        <textarea id="draft-text"></textarea>
-        <div style="display:flex;gap:8px;margin-top:10px">
-          <button class="btn btn-orange" onclick="copyDraft()">Copy</button>
-          <button class="btn btn-outline" onclick="document.getElementById('draft-panel').style.display='none'">Discard</button>
-        </div>
-      </div>
-
+  <!-- GMAIL VIEW -->
+  <div class="content" id="view-gmail" style="display:none">
+    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+      <button class="btn btn-orange btn-sm" onclick="runTriage()">✦ Run Triage</button>
+      <button class="btn btn-outline btn-sm" onclick="loadEmails(50)">↻ Refresh</button>
+      <button class="btn btn-outline btn-sm" onclick="applyLabels()">🏷️ Label Gmail</button>
+    </div>
+    <div class="signals-grid" id="all-email-list">
+      <div class="empty"><div class="empty-icon">✉️</div><div class="empty-title">Click Run Triage to analyze inbox</div></div>
     </div>
   </div>
+
 </div>
 
-<!-- Snooze modal -->
-<div id="snooze-modal" onclick="closeSnooze(event)">
-  <div class="modal">
-    <div class="modal-title">⏰ Snooze this message</div>
-    <div class="snooze-opts">
-      <button class="snooze-opt" onclick="snoozeEmail(3)">In 3 hours</button>
-      <button class="snooze-opt" onclick="snoozeEmail(24)">Tomorrow</button>
-      <button class="snooze-opt" onclick="snoozeEmail(48)">In 2 days</button>
-      <button class="snooze-opt" onclick="snoozeEmail(168)">Next week</button>
+<!-- SHARE MODAL -->
+<div id="share-modal" onclick="closeShareIfBg(event)">
+  <div class="modal-box">
+    <div class="modal-title">📤 Share Analytics Report</div>
+    <div class="modal-sub">Select teammates and channel to share today's DCF snapshot</div>
+    <div class="teammate-grid" id="teammate-grid"></div>
+    <div class="share-via" id="share-via">
+      <button class="via-btn selected" id="via-email" onclick="selectVia('email')">✉️ Email</button>
+      <button class="via-btn" id="via-slack" onclick="selectVia('slack')">💬 Slack (soon)</button>
     </div>
-    <button class="btn btn-outline" onclick="closeSnooze()">Cancel</button>
+    <div class="modal-actions">
+      <button class="btn btn-purple" onclick="sendShare()">Send Report</button>
+      <button class="btn btn-outline" onclick="closeShare()">Cancel</button>
+    </div>
   </div>
 </div>
 
 <script>
+// ── CONFIG ──────────────────────────────────────────────
 const CLIENT_ID = '322751089633-u99meo5em7lnco8blpl5dtgosiarcmkf.apps.googleusercontent.com';
+const PROXY = 'https://frosty-bush-03e9.mshivenderk-710.workers.dev';
+const SHEET_ID = '17Uktk9crbcF-rps1SSVfAQmwkRb3Vhl1t717IQvw8qI';
+const SHEET_TAB = 'New_Raw_Data';
 const SCOPES = [
   'https://www.googleapis.com/auth/gmail.readonly',
   'https://www.googleapis.com/auth/gmail.modify',
@@ -898,891 +391,649 @@ const SCOPES = [
   'https://www.googleapis.com/auth/userinfo.email'
 ].join(' ');
 
-const DCF_KEYWORDS = ['dcf','dealer','loan','disbursal','miles','cars24','saarathi','nbfc','pmax','cibil','ujjwal','sambhav','jithin','parul','rishi','kushagra','divey','aakash','vraj','mukund','kirti','loans24','green channel','amber','lender'];
+const TEAMMATES = [
+  { name: 'Ujjwal Mehrotra', role: 'Business Head', email: 'ujjwal.mehrotra@cars24.com' },
+  { name: 'Sambhav Jain', role: 'Finance / Metrics', email: 'sambhav.jain@cars24.com' },
+  { name: 'Jithin Lal', role: 'Sales NSM', email: 'jithin.lal@cars24.com' },
+  { name: 'Parul Vashisht', role: 'Central Conversion', email: 'parul.vashisht@cars24.com' },
+  { name: 'Rishi Shankar', role: 'Business Ops', email: 'rishi.shankar@cars24.com' },
+  { name: 'Divey Jain', role: 'Product', email: 'divey.jain@cars24.com' },
+];
 
-let token = null, emails = [], triage = {}, snoozed = {}, followUps = {}, currentEmail = null, currentView = 'inbox', gmailLabels = {}, nextTriage = null, countdownTimer = null;
+const DCF_KW = ['dcf','dealer','loan','disbursal','miles','cars24','saarathi','nbfc','pmax','cibil','ujjwal','sambhav','jithin','parul','rishi','kushagra','divey','aakash','vraj','mukund','kirti','loans24','lender','rc limit','kuwy','sarvdhan','rto','payment memo'];
 
-// ── AUTH ──────────────────────────────────────────────────
+let token = null, emails = [], triage = {}, snoozed = {}, followUps = {}, currentEmail = null;
+let misData = [], misLoaded = false, nextTriage = null, countdownInt = null;
+let selectedTeammates = [], shareVia = 'email';
+let misMetrics = {};
+
+// ── AUTH ────────────────────────────────────────────────
 function startAuth() {
-  const redirect = window.location.href.split('?')[0].split('#')[0];
-  window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${new URLSearchParams({ client_id: CLIENT_ID, redirect_uri: redirect, response_type: 'token', scope: SCOPES, prompt: 'consent' })}`;
+  const redirect = location.href.split('?')[0].split('#')[0];
+  location.href = 'https://accounts.google.com/o/oauth2/v2/auth?' + new URLSearchParams({ client_id: CLIENT_ID, redirect_uri: redirect, response_type: 'token', scope: SCOPES, prompt: 'consent' });
 }
 
 function checkAuth() {
-  const params = new URLSearchParams(window.location.hash.substring(1));
-  const t = params.get('access_token');
-  if (t) { token = t; history.replaceState(null, '', location.pathname); showApp(); return; }
-  const stored = sessionStorage.getItem('st_v3_token');
-  if (stored) { token = stored; showApp(); }
+  const p = new URLSearchParams(location.hash.substring(1));
+  const t = p.get('access_token');
+  if (t) { token = t; sessionStorage.setItem('st_v4', t); history.replaceState(null,'',location.pathname); showApp(); return; }
+  const s = sessionStorage.getItem('st_v4');
+  if (s) { token = s; showApp(); }
 }
 
 async function showApp() {
-  sessionStorage.setItem('st_v3_token', token);
+  sessionStorage.setItem('st_v4', token);
   document.getElementById('auth-screen').style.display = 'none';
   document.getElementById('app-screen').style.display = 'flex';
-  document.getElementById('command-strip').style.display = 'flex';
   loadState();
   try {
-    const d = await (await fetch('https://www.googleapis.com/oauth2/v2/userinfo', { headers: { Authorization: `Bearer ${token}` } })).json();
+    const d = await (await fetch('https://www.googleapis.com/oauth2/v2/userinfo', { headers: { Authorization: 'Bearer ' + token } })).json();
     document.getElementById('user-tag').textContent = d.email || '';
   } catch(e) {}
-  setStripDate();
-  await loadEmails(50); // Fast initial load — 50 emails
+  buildTeammateGrid();
+  // Start parallel loads
+  loadEmails(50);
+  loadMISData();
   startCountdown();
-  generateStripAI();
-}
-
-// ── COMMAND STRIP ─────────────────────────────────────────
-function setStripDate() {
-  const now = new Date();
-  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  document.getElementById('strip-date').textContent = `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
-}
-
-function updateStripCounts() {
-  const must = Object.values(triage).filter(t => t.priority === 'MUST_READ').length;
-  const dcf = Object.values(triage).filter(t => t.priority === 'DCF').length;
-  const fu = Object.keys(followUps).length;
-  document.getElementById('sp-must').textContent = `🔴 ${must} must act`;
-  document.getElementById('sp-dcf').textContent = `💜 ${dcf} DCF signals`;
-  document.getElementById('sp-followup').textContent = `📌 ${fu} follow-up${fu !== 1 ? 's' : ''}`;
-}
-
-function updateStripTimer(label) {
-  document.getElementById('sp-triage').textContent = `🔄 next triage in ${label}`;
-}
-
-async function generateStripAI() {
-  const el = document.getElementById('strip-ai');
-  el.classList.add('loading');
-  el.textContent = '✦ Reading your signals...';
-
-  const must = Object.values(triage).filter(t => t.priority === 'MUST_READ').length;
-  const dcf = Object.values(triage).filter(t => t.priority === 'DCF').length;
-  const fu = Object.keys(followUps).length;
-  const total = emails.length;
-
-  const topEmails = emails.slice(0, 10).map(e => {
-    const h = e.payload?.headers || [];
-    const t = triage[e.id];
-    return `[${t?.priority||'?'}] ${getH(h,'From')||'?'} — ${getH(h,'Subject')||'?'}`;
-  }).join('\n');
-
-  const res = await claude(`You are Shivender Malik's AI chief of staff. Write ONE punchy sentence (max 12 words) that captures what he most needs to know right now across all his signals. Be specific, not generic.
-
-Context: ${total} emails total, ${must} must-act, ${dcf} DCF signals, ${fu} follow-ups pending.
-Top signals:
-${topEmails}
-
-Output only the single sentence. No emoji. No preamble.`);
-
-  el.classList.remove('loading');
-  el.textContent = '✦ ' + res.trim();
-}
-
-async function refreshStrip() {
-  updateStripCounts();
-  await generateStripAI();
-}
-
-async function refreshStripAI() {
-  await generateStripAI();
 }
 
 function signOut() {
-  sessionStorage.clear(); token = null;
-  clearInterval(countdownTimer);
-  document.getElementById('auth-screen').style.display = 'flex';
-  document.getElementById('app-screen').style.display = 'none';
+  sessionStorage.removeItem('st_v4');
+  clearInterval(countdownInt);
+  location.reload();
 }
 
-// ── EMAIL LOADING ─────────────────────────────────────────
-async function loadEmails(maxEmails = 50) {
-  document.getElementById('status-bar').style.display = 'block';
-  document.getElementById('status-bar').textContent = 'Fetching inbox...';
+// ── TAB SWITCHING ────────────────────────────────────────
+let currentTab = 'home';
+function switchTab(tab) {
+  currentTab = tab;
+  ['home','must','mis','gmail'].forEach(t => {
+    document.getElementById('view-' + t).style.display = t === tab ? 'block' : 'none';
+    document.getElementById('tab-' + t).classList.toggle('active', t === tab);
+  });
+  if (tab === 'gmail') renderAllEmails();
+  if (tab === 'must') renderMustAct();
+}
 
+// ── EMAIL LOADING ────────────────────────────────────────
+async function loadEmails(max) {
+  setStatus('Fetching emails...');
   try {
-    let allMessages = [];
-    let pageToken = null;
-
-    while (allMessages.length < maxEmails) {
-      const fetchCount = Math.min(100, maxEmails - allMessages.length);
-      const url = `https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=${fetchCount}&labelIds=INBOX${pageToken ? '&pageToken=' + pageToken : ''}`;
-      const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-      const d = await r.json();
+    let msgs = [], pt = null;
+    while (msgs.length < (max || 50)) {
+      const url = 'https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=' + Math.min(100, (max||50) - msgs.length) + '&labelIds=INBOX' + (pt ? '&pageToken=' + pt : '');
+      const d = await (await fetch(url, { headers: { Authorization: 'Bearer ' + token } })).json();
       if (!d.messages) break;
-      allMessages = allMessages.concat(d.messages);
-      pageToken = d.nextPageToken;
-      if (!pageToken) break;
+      msgs = msgs.concat(d.messages);
+      pt = d.nextPageToken;
+      if (!pt) break;
     }
-
-    if (!allMessages.length) { emails = []; renderList(); document.getElementById('status-bar').style.display = 'none'; return; }
-
-    const cached = emails.reduce((acc, e) => { acc[e.id] = e; return acc; }, {});
-    const toFetch = allMessages.filter(m => !cached[m.id]);
-
-    // Fetch all metadata in parallel - no artificial delays
-    const newEmails = await Promise.all(toFetch.map(async m => {
+    const cached = emails.reduce((a, e) => { a[e.id] = e; return a; }, {});
+    const toFetch = msgs.filter(m => !cached[m.id]);
+    const newE = await Promise.all(toFetch.map(async m => {
       try {
-        const r = await fetch(
-          `https://gmail.googleapis.com/gmail/v1/users/me/messages/${m.id}?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        return r.json();
+        return (await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/' + m.id + '?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date', { headers: { Authorization: 'Bearer ' + token } })).json();
       } catch(e) { return null; }
     }));
-
-    emails = allMessages.map(m => cached[m.id] || newEmails.find(e => e?.id === m.id)).filter(Boolean);
-    renderList();
-    document.getElementById('status-bar').textContent = `✓ ${emails.length} emails loaded`;
-    setTimeout(() => { document.getElementById('status-bar').style.display = 'none'; }, 1500);
-  } catch(e) {
-    document.getElementById('status-bar').textContent = 'Error loading inbox';
-  }
+    emails = msgs.map(m => cached[m.id] || newE.find(e => e?.id === m.id)).filter(Boolean);
+    hideStatus();
+    renderEmailSignals();
+    updateGmailBadge();
+  } catch(e) { hideStatus(); }
 }
 
-// ── TRIAGE (smart cache) ──────────────────────────────────
+// ── TRIAGE ───────────────────────────────────────────────
 async function runTriage() {
-  // First expand to 500 emails if we only have 50
-  if (emails.length <= 50) {
-    document.getElementById('status-bar').style.display = 'block';
-    document.getElementById('status-bar').textContent = 'Expanding to 500 emails...';
-    await loadEmails(500);
-  }
-
-  // Only triage emails not already cached
+  if (!emails.length) await loadEmails(500);
   const uncached = emails.filter(e => !triage[e.id]);
-  
-  if (!uncached.length) {
-    showStatus('✓ All emails already triaged — cache up to date');
-    setTimeout(hideStatus, 2000);
-    updateCounts(); renderList();
-    return;
-  }
-
-  showProgress(0);
-  showStatus(`Claude is triaging ${uncached.length} new emails (${emails.length - uncached.length} from cache)...`);
-
-  // Process in batches of 100 to avoid token limits
-  const BATCH = 100;
-  let processed = 0;
-
+  if (!uncached.length) { renderEmailSignals(); renderAllEmails(); return; }
+  setStatus('Triaging ' + uncached.length + ' emails...');
+  const BATCH = 80;
   for (let i = 0; i < uncached.length; i += BATCH) {
     const batch = uncached.slice(i, i + BATCH);
     const list = batch.map((e, idx) => {
       const h = e.payload?.headers || [];
-      const from = getH(h, 'From') || 'Unknown';
-      const subject = getH(h, 'Subject') || '(no subject)';
-      return `${idx}|${e.id}|${from}|${subject}`;
+      return idx + '|' + e.id + '|' + (getH(h,'From')||'?') + '|' + (getH(h,'Subject')||'?');
     }).join('\n');
-
-    showProgress(Math.round((i / uncached.length) * 80));
-
-    const res = await claude(`You are Shivender Malik's AI triage assistant. He leads DCF (Dealer Channel Finance) at CARS24/Loans24 — dealer-sourced used car loans.
-
-Triage each email. Output exactly: INDEX|ID|PRIORITY|REASON
-
-PRIORITY options:
-- MUST_READ: Needs Shivender's direct action, decision, escalation, or is time-sensitive
-- DCF: About dealer loans, CARS24 team (Ujjwal, Sambhav, Jithin, Parul, Rishi, Divey, Aakash, Vraj, Mukund, Kirti, Kushagra), disbursals, Miles, CIBIL, NBFC, PMaxx, Green/Amber channel
-- SKIM: FYI, low urgency, informational
-- IGNORE: Newsletters, auto-alerts, CC noise, marketing
-
-REASON: ≤8 words, specific.
-
-Emails (INDEX|ID|FROM|SUBJECT):
-${list}
-
-Output ONLY the lines. No preamble.`, 4000);
-
+    const res = await claude('Triage these emails for Shivender Malik, DCF business head at CARS24/Loans24. Output exactly INDEX|ID|PRIORITY|REASON\nPRIORITY: MUST_READ, DCF, SKIM, IGNORE\nREASON: ≤8 words\n\n' + list + '\n\nOutput only the lines.');
     res.split('\n').forEach(line => {
       const p = line.split('|');
       if (p.length >= 4) {
-        const id = p[1]?.trim();
-        const priority = p[2]?.trim();
-        const reason = p.slice(3).join('|').trim();
-        const validPriorities = ['MUST_READ', 'DCF', 'SKIM', 'IGNORE'];
-        if (id && validPriorities.includes(priority)) triage[id] = { priority, reason };
+        const id = p[1]?.trim(), priority = p[2]?.trim(), reason = p.slice(3).join('|').trim();
+        if (id && ['MUST_READ','DCF','SKIM','IGNORE'].includes(priority)) triage[id] = { priority, reason };
       }
     });
-
-    processed += batch.length;
+    emails.forEach(e => { if (!triage[e.id]) triage[e.id] = { priority: 'SKIM', reason: '' }; });
+    setStatus('Triaged ' + Math.min(i + BATCH, uncached.length) + '/' + uncached.length);
   }
-
-  // Default any still-unmatched to SKIM
-  emails.forEach(e => {
-    if (!triage[e.id]) triage[e.id] = { priority: 'SKIM', reason: 'Not analyzed' };
-  });
-
-  // Save triage cache to localStorage
   try { localStorage.setItem('st_triage', JSON.stringify(triage)); } catch(e) {}
-
-  updateCounts(); renderList();
-  showProgress(100); setTimeout(hideProgress, 400);
-  showStatus(`✓ Triage complete — ${processed} new emails analyzed`);
-  setTimeout(hideStatus, 3000);
-  generateStripAI();
+  hideStatus();
+  renderEmailSignals();
+  renderAllEmails();
+  renderMustAct();
+  updateGmailBadge();
 }
 
-// ── VIEWS ─────────────────────────────────────────────────
-function setView(view, el) {
-  currentView = view;
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  if (el) el.classList.add('active');
-  hide('briefing-panel');
-  hide('mis-panel');
-  document.getElementById('message-list').style.display = 'flex';
-  document.getElementById('action-bar-main').style.display = 'flex';
-  document.getElementById('stats-strip-main').style.display = 'grid';
-  if (view === 'briefing') { showBriefing(); return; }
-  if (view === 'mis') { showMIS(); return; }
-  renderList();
-}
-
-function renderList() {
-  const list = document.getElementById('message-list');
-  const pMap = { MUST_READ: 'must', DCF: 'dcf', SKIM: 'skim', IGNORE: 'ignore' };
-  const tagMap = { MUST_READ: 'tag-must', DCF: 'tag-dcf', SKIM: 'tag-skim', IGNORE: 'tag-ignore' };
-  const labelMap = { MUST_READ: '🔴 Must Act', DCF: '💜 DCF', SKIM: '🟡 Skim', IGNORE: '⚪ Ignore' };
-
-  let filtered = emails.filter(e => {
+// ── RENDER EMAIL SIGNALS (HOME) ──────────────────────────
+function renderEmailSignals() {
+  const priority = emails.filter(e => {
     const t = triage[e.id];
-    const isSnoozed = snoozed[e.id] && snoozed[e.id].until > Date.now();
-    const isFollowUp = followUps[e.id];
-    if (currentView === 'snoozed') return isSnoozed;
-    if (currentView === 'followup') return isFollowUp;
-    if (isSnoozed) return false;
-    if (currentView === 'inbox' || currentView === 'gmail') return true;
-    if (!t) return false;
-    if (currentView === 'must') return t.priority === 'MUST_READ';
-    if (currentView === 'dcf') return t.priority === 'DCF';
-    if (currentView === 'skim') return t.priority === 'SKIM';
-    if (currentView === 'ignore') return t.priority === 'IGNORE';
-    return true;
-  });
-
-  if (!filtered.length) {
-    list.innerHTML = `<div class="empty-state"><div class="es-icon">${Object.keys(triage).length ? '✓' : '✦'}</div>${Object.keys(triage).length ? 'No messages in this category' : 'Click <strong>Run Triage</strong> to analyze'}</div>`;
+    return t && (t.priority === 'MUST_READ' || t.priority === 'DCF');
+  }).slice(0, 5);
+  const container = document.getElementById('email-signals');
+  if (!priority.length) {
+    container.innerHTML = '<div class="empty"><div class="empty-icon">✉️</div><div class="empty-title">' + (Object.keys(triage).length ? 'No priority emails right now' : 'Click Run Triage in Gmail tab to analyze') + '</div></div>';
     return;
   }
-
-  list.innerHTML = filtered.map(email => {
-    const h = email.payload?.headers || [];
-    const from = (getH(h, 'From') || 'Unknown').replace(/<.*>/, '').trim();
-    const subject = getH(h, 'Subject') || '(no subject)';
-    const date = fmtDate(getH(h, 'Date'));
-    const t = triage[email.id];
-    const priority = t?.priority || 'SKIM';
-    const reason = t?.reason || '';
-    const isSnoozed = snoozed[email.id] && snoozed[email.id].until > Date.now();
-    const isFollowUp = followUps[email.id];
-    const pc = isSnoozed ? 'p-snoozed' : (pMap[priority] || 'p-skim');
-    const idx = emails.findIndex(e => e.id === email.id);
-
-    return `
-    <div class="msg-card ${pc}" onclick="openEmail(${idx})">
-      <div class="msg-icon icon-gmail">✉️</div>
-      <div class="msg-body">
-        <div class="msg-from">${esc(from)}</div>
-        <div class="msg-subject">${esc(subject)}</div>
-        ${reason ? `<div class="msg-reason">${esc(reason)}</div>` : ''}
-      </div>
-      <div class="msg-right">
-        <div class="msg-time">${date}</div>
-        <div class="msg-tags">
-          ${t ? `<span class="tag ${tagMap[priority]}">${labelMap[priority]}</span>` : ''}
-          ${isFollowUp ? '<span class="tag tag-followup">📌 Follow-up</span>' : ''}
-          ${isSnoozed ? '<span class="tag tag-snoozed">⏰ Snoozed</span>' : ''}
-          <span class="tag tag-channel">Gmail</span>
-        </div>
-      </div>
-    </div>`;
-  }).join('');
+  container.innerHTML = priority.map((e, i) => renderSignalCard(e, i, 'home')).join('');
 }
 
-// ── EMAIL DETAIL ──────────────────────────────────────────
-async function openEmail(idx) {
-  showStatus('Loading...');
-  hide('claude-panel'); hide('draft-panel');
-  try {
-    const msg = emails[idx];
-    const d = await (await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${msg.id}?format=full`, { headers: { Authorization: `Bearer ${token}` } })).json();
-    currentEmail = d;
-    const h = d.payload?.headers || [];
-    const t = triage[d.id];
-    const pLabels = { MUST_READ: '🔴 Must Act', DCF: '💜 DCF', SKIM: '🟡 Skim', IGNORE: '⚪ Ignore' };
-    document.getElementById('d-subject').textContent = getH(h, 'Subject') || '(no subject)';
-    document.getElementById('d-from').textContent = '✉ ' + (getH(h, 'From') || '');
-    document.getElementById('d-date').textContent = '🕐 ' + fmtDate(getH(h, 'Date'));
-    document.getElementById('d-priority').textContent = t ? pLabels[t.priority] || '' : '';
-    document.getElementById('d-body').textContent = extractBody(d.payload) || '(empty)';
-    document.getElementById('detail-panel').style.display = 'block';
-    hideStatus();
-  } catch(e) { showStatus('Error loading message'); }
-}
-
-// ── AI FEATURES ──────────────────────────────────────────
-async function summarize() {
-  if (!currentEmail) return;
-  show('claude-panel');
-  document.getElementById('claude-body').innerHTML = '<div class="loading"><div class="spinner"></div>Analyzing...</div>';
-  const h = currentEmail.payload?.headers || [];
-  const res = await claude(`Analyze this email for Shivender Malik, DCF head at CARS24/Loans24.
-
-1. **TL;DR** (2 sentences max)
-2. **Action required?** Yes/No + what
-3. **Priority** High/Med/Low + why
-4. **Tone** of sender
-5. **Key points**
-6. **Suggested next step**
-
-From: ${getH(h,'From')}
-Subject: ${getH(h,'Subject')}
-Body: ${extractBody(currentEmail.payload).substring(0,3000)}`);
-  document.getElementById('claude-body').textContent = res;
-}
-
-async function draftReply() {
-  if (!currentEmail) return;
-  show('draft-panel');
-  document.getElementById('draft-text').value = 'Drafting...';
-  const h = currentEmail.payload?.headers || [];
-  const res = await claude(`Draft a professional, concise reply for Shivender Malik (DCF head, CARS24/Loans24). Be direct, match tone.
-
-From: ${getH(h,'From')}
-Subject: ${getH(h,'Subject')}
-Body: ${extractBody(currentEmail.payload).substring(0,2000)}
-
-Reply body only.`);
-  document.getElementById('draft-text').value = res;
-}
-
-async function autoReply() {
-  if (!currentEmail) return;
-  show('draft-panel');
-  document.getElementById('draft-text').value = 'Auto-drafting...';
-  const h = currentEmail.payload?.headers || [];
-  const res = await claude(`This is a routine email. Write the shortest complete professional reply for Shivender Malik — max 3 sentences. Handle it fully.
-
-From: ${getH(h,'From')}
-Subject: ${getH(h,'Subject')}
-Body: ${extractBody(currentEmail.payload).substring(0,1500)}
-
-Reply body only.`);
-  document.getElementById('draft-text').value = res;
-}
-
-async function showBriefing() {
-  show('briefing-panel');
-  document.getElementById('message-list').style.display = 'none';
-  hide('detail-panel'); hide('claude-panel'); hide('draft-panel');
-  document.getElementById('briefing-summary').textContent = 'Generating your briefing...';
-  document.getElementById('briefing-items').innerHTML = '';
-  document.getElementById('digest-body').innerHTML = '<div class="loading"><div class="spinner"></div>Analyzing inbox...</div>';
-
-  if (!emails.length) await loadEmails();
-
-  const must = Object.values(triage).filter(t => t.priority === 'MUST_READ').length;
-  const dcf = Object.values(triage).filter(t => t.priority === 'DCF').length;
-  const fu = Object.keys(followUps).length;
-
-  const summary = emails.slice(0, 30).map(e => {
-    const h = e.payload?.headers || [];
-    const t = triage[e.id];
-    return `[${t?.priority||'?'}] From: ${getH(h,'From')||'?'} | ${getH(h,'Subject')||'?'}`;
-  }).join('\n');
-
-  const res = await claude(`Daily briefing for Shivender Malik, DCF head at CARS24/Loans24.
-
-Write in two parts separated by "---DIGEST---":
-
-PART 1: One punchy sentence (max 15 words) on what needs attention today.
-
----DIGEST---
-
-PART 2: Structured digest:
-## 🔴 Must Act Today (${must} items)
-## 💜 DCF Updates (${dcf} signals)
-## 📌 Follow-ups Pending (${fu} items)
-## ✦ Recommendation
-
-Inbox (${emails.length} emails):
-${summary}
-
-Be specific, actionable, DCF-context-aware.`, 2000);
-
-  const parts = res.split('---DIGEST---');
-  document.getElementById('briefing-summary').textContent = (parts[0]||res).replace('PART 1:','').trim();
-  document.getElementById('briefing-items').innerHTML = `
-    <div class="briefing-item"><div class="briefing-item-label">Must Act</div><div class="briefing-item-val">${must}</div></div>
-    <div class="briefing-item"><div class="briefing-item-label">DCF Signals</div><div class="briefing-item-val">${dcf}</div></div>
-    <div class="briefing-item"><div class="briefing-item-label">Follow-ups</div><div class="briefing-item-val">${fu}</div></div>`;
-  document.getElementById('digest-body').textContent = parts[1]?.replace('PART 2:','').trim() || '';
-}
-
-// ── GMAIL LABELS ──────────────────────────────────────────
-async function applyLabels() {
-  if (!Object.keys(triage).length) { showStatus('Run triage first'); return; }
-
-  // Skip already-labeled emails using localStorage cache
-  let labeled = {};
-  try { labeled = JSON.parse(localStorage.getItem('st_labeled') || '{}'); } catch(e) {}
-  const toLabel = Object.entries(triage).filter(([id]) => !labeled[id]);
-  if (!toLabel.length) { showStatus('✓ All emails already labeled'); setTimeout(hideStatus, 2000); return; }
-
-  showStatus(`Syncing ${toLabel.length} new labels to Gmail...`);
-
-  const labelDefs = [
-    { name: 'Shivi-twin/Must-Act', color: { backgroundColor: '#fb4c2f', textColor: '#ffffff' } },
-    { name: 'Shivi-twin/DCF', color: { backgroundColor: '#4a86e8', textColor: '#ffffff' } },
-    { name: 'Shivi-twin/Skim', color: { backgroundColor: '#ffad47', textColor: '#ffffff' } },
-    { name: 'Shivi-twin/Ignore', color: { backgroundColor: '#999999', textColor: '#ffffff' } },
-  ];
-
-  // Fetch existing labels
-  gmailLabels = {};
-  try {
-    const r = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/labels', { headers: { Authorization: `Bearer ${token}` } });
-    const d = await r.json();
-    (d.labels || []).forEach(l => { gmailLabels[l.name] = l.id; });
-  } catch(e) { showStatus('Error fetching Gmail labels'); return; }
-
-  // Create only missing labels
-  for (const ld of labelDefs) {
-    if (gmailLabels[ld.name]) continue;
-    try {
-      const r = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/labels', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: ld.name, color: ld.color, labelListVisibility: 'labelShow', messageListVisibility: 'show' })
-      });
-      const d = await r.json();
-      if (d.id) gmailLabels[ld.name] = d.id;
-    } catch(e) {}
+function renderMustAct() {
+  const must = emails.filter(e => triage[e.id]?.priority === 'MUST_READ').slice(0, 20);
+  const container = document.getElementById('must-signals');
+  if (!must.length) {
+    container.innerHTML = '<div class="empty"><div class="empty-icon">🔴</div><div class="empty-title">No must-act emails</div><div class="empty-sub">Run triage in Gmail tab first</div></div>';
+    return;
   }
-
-  const priorityToLabel = { MUST_READ: 'Shivi-twin/Must-Act', DCF: 'Shivi-twin/DCF', SKIM: 'Shivi-twin/Skim', IGNORE: 'Shivi-twin/Ignore' };
-  let applied = 0;
-
-  // Apply in parallel batches of 20
-  for (let i = 0; i < toLabel.length; i += 20) {
-    const batch = toLabel.slice(i, i + 20);
-    await Promise.all(batch.map(async ([msgId, t]) => {
-      const labelId = gmailLabels[priorityToLabel[t.priority]];
-      if (!labelId) return;
-      try {
-        const r = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${msgId}/modify`, {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ addLabelIds: [labelId] })
-        });
-        if (r.ok) { applied++; labeled[msgId] = true; }
-      } catch(e) {}
-    }));
-    showStatus(`Labeling... ${Math.min(i + 20, toLabel.length)}/${toLabel.length}`);
-  }
-
-  // Save labeled cache
-  try { localStorage.setItem('st_labeled', JSON.stringify(labeled)); } catch(e) {}
-  showStatus(`✓ Labeled ${applied} new emails in Gmail`);
-  setTimeout(hideStatus, 3000);
+  container.innerHTML = must.map((e, i) => renderSignalCard(e, i, 'must')).join('');
 }
 
-// ── SNOOZE ────────────────────────────────────────────────
-function openSnooze() { document.getElementById('snooze-modal').style.display = 'flex'; }
-function closeSnooze(e) { if (!e || e.target === document.getElementById('snooze-modal')) document.getElementById('snooze-modal').style.display = 'none'; }
-function snoozeEmail(h) {
-  if (!currentEmail) return;
-  snoozed[currentEmail.id] = { until: Date.now() + h * 3600000 };
-  saveState(); updateCounts(); renderList(); closeSnooze();
-  showStatus(`⏰ Snoozed for ${h < 24 ? h + 'h' : h/24 + 'd'}`); setTimeout(hideStatus, 2000);
+function renderAllEmails() {
+  const list = document.getElementById('all-email-list');
+  if (!emails.length) { list.innerHTML = '<div class="empty"><div class="empty-icon">✉️</div><div class="empty-title">No emails loaded</div></div>'; return; }
+  list.innerHTML = emails.slice(0, 100).map((e, i) => renderSignalCard(e, i, 'all')).join('');
 }
 
-// ── FOLLOW-UP ─────────────────────────────────────────────
-function toggleFollowUp() {
-  if (!currentEmail) return;
-  if (followUps[currentEmail.id]) { delete followUps[currentEmail.id]; showStatus('📌 Removed'); }
-  else { followUps[currentEmail.id] = true; showStatus('📌 Marked for follow-up'); }
-  saveState(); updateCounts(); renderList(); setTimeout(hideStatus, 2000);
+function renderSignalCard(email, idx, view) {
+  const h = email.payload?.headers || [];
+  const from = (getH(h,'From')||'Unknown').replace(/<.*>/,'').trim();
+  const subject = getH(h,'Subject') || '(no subject)';
+  const date = fmtDate(getH(h,'Date'));
+  const t = triage[email.id];
+  const pClass = t?.priority === 'MUST_READ' ? 'must' : t?.priority === 'DCF' ? 'dcf' : '';
+  const pLabel = t?.priority === 'MUST_READ' ? '🔴 Must Act' : t?.priority === 'DCF' ? '💜 DCF' : t?.priority === 'SKIM' ? '🟡 Skim' : '⚪';
+  const id = view + '-' + idx;
+  return '<div class="signal-card priority-' + pClass + '">' +
+    '<div class="signal-top"><span class="signal-channel">Gmail</span>' +
+    (t ? '<span class="signal-priority ' + pClass + '">' + pLabel + '</span>' : '') +
+    '<span class="signal-time">' + date + '</span></div>' +
+    '<div class="signal-from">' + esc(from) + '</div>' +
+    '<div class="signal-subject">' + esc(subject) + '</div>' +
+    (t?.reason ? '<div class="signal-reason">' + esc(t.reason) + '</div>' : '') +
+    '<div class="signal-actions">' +
+    '<button class="sa-btn sa-primary" onclick="openReply(\'' + id + '\',\'' + email.id + '\')">↩ Reply</button>' +
+    '<button class="sa-btn sa-secondary" onclick="summarizeEmail(\'' + email.id + '\',\'' + id + '\')">✦ Summarize</button>' +
+    '</div>' +
+    '<div class="reply-box" id="reply-' + id + '"></div>' +
+    '</div>';
 }
 
-// ── COUNTDOWN ─────────────────────────────────────────────
-function startCountdown() {
-  nextTriage = Date.now() + 3 * 3600000;
-  document.getElementById('timer-tag').style.display = 'inline-flex';
-  updateTimer();
-  countdownTimer = setInterval(() => {
-    if (Date.now() >= nextTriage) { runTriage(); nextTriage = Date.now() + 3 * 3600000; }
-    updateTimer();
-  }, 1000);
-}
-function updateTimer() {
-  const r = Math.max(0, nextTriage - Date.now());
-  const h = Math.floor(r/3600000), m = Math.floor((r%3600000)/60000), s = Math.floor((r%60000)/1000);
-  const label = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-  document.getElementById('timer-val').textContent = label;
-  updateStripTimer(label);
-}
-
-// ── COUNTS ────────────────────────────────────────────────
-function updateCounts() {
-  const c = { MUST_READ:0, DCF:0, SKIM:0, IGNORE:0 };
-  Object.values(triage).forEach(t => { if (c[t.priority]!==undefined) c[t.priority]++; });
-  const sn = Object.values(snoozed).filter(s => s.until > Date.now()).length;
-  const fu = Object.keys(followUps).length;
-  const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-  set('s-must', c.MUST_READ); set('s-dcf', c.DCF); set('s-skim', c.SKIM); set('s-ignore', c.IGNORE); set('s-followup', fu); set('s-snoozed', sn);
-  set('nc-all', emails.length); set('nc-must', c.MUST_READ); set('nc-dcf', c.DCF); set('nc-skim', c.SKIM); set('nc-ignore', c.IGNORE); set('nc-followup', fu); set('nc-snoozed', sn);
-  updateStripCounts();
-}
-
-// ── HELPERS ──────────────────────────────────────────────
-async function claude(prompt, maxTokens = 1000) {
+// ── REPLY ────────────────────────────────────────────────
+async function openReply(cardId, emailId) {
+  const box = document.getElementById('reply-' + cardId);
+  if (box.classList.contains('open')) { box.classList.remove('open'); return; }
+  box.classList.add('open');
+  box.innerHTML = '<div style="font-size:10px;color:var(--g400);margin-bottom:6px">✦ Drafting reply...</div>';
+  const email = emails.find(e => e.id === emailId);
+  if (!email) return;
   try {
-    const r = await fetch('https://frosty-bush-03e9.mshivenderk-710.workers.dev', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: maxTokens, messages: [{ role: 'user', content: prompt }] })
-    });
-    const d = await r.json(); return d.content?.[0]?.text || 'No response';
-  } catch(e) { return 'Error connecting to Claude'; }
+    const full = await (await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/' + emailId + '?format=full', { headers: { Authorization: 'Bearer ' + token } })).json();
+    const h = full.payload?.headers || [];
+    const body = extractBody(full.payload);
+    const draft = await claude('Draft a professional concise reply for Shivender Malik (DCF head, CARS24/Loans24). Match tone. Be direct.\n\nFrom: ' + getH(h,'From') + '\nSubject: ' + getH(h,'Subject') + '\nBody: ' + body.substring(0, 2000) + '\n\nReply body only.');
+    box.innerHTML = '<textarea class="reply-textarea" id="rt-' + cardId + '">' + draft + '</textarea>' +
+      '<div class="reply-actions">' +
+      '<button class="btn btn-purple btn-sm" onclick="copyReply(\'' + cardId + '\')">Copy</button>' +
+      '<button class="btn btn-outline btn-sm" onclick="document.getElementById(\'reply-' + cardId + '\').classList.remove(\'open\')">Close</button>' +
+      '<span class="reply-note">Copy and paste into Gmail to send</span>' +
+      '</div>';
+  } catch(e) { box.innerHTML = '<div style="color:var(--red);font-size:11px">Error drafting reply</div>'; }
 }
 
-function getH(h, n) { return h.find(x => x.name.toLowerCase() === n.toLowerCase())?.value; }
-
-function extractBody(payload) {
-  if (!payload) return '';
-  if (payload.body?.data) return safeAtob(payload.body.data);
-  if (payload.parts) {
-    for (const p of payload.parts) { if (p.mimeType === 'text/plain' && p.body?.data) return safeAtob(p.body.data); }
-    for (const p of payload.parts) { const n = extractBody(p); if (n) return n; }
-  }
-  return '';
-}
-
-function safeAtob(d) { try { return atob(d.replace(/-/g,'+').replace(/_/g,'/')); } catch(e) { return ''; } }
-
-function fmtDate(s) {
-  if (!s) return '';
+async function summarizeEmail(emailId, cardId) {
+  const box = document.getElementById('reply-' + cardId);
+  box.classList.add('open');
+  box.innerHTML = '<div style="font-size:10px;color:var(--g400)">✦ Analyzing...</div>';
   try {
-    const d = new Date(s), now = new Date(), diff = now - d;
-    if (diff < 86400000) return d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
-    if (diff < 604800000) return d.toLocaleDateString([], {weekday:'short'});
-    return d.toLocaleDateString([], {month:'short',day:'numeric'});
-  } catch(e) { return s; }
+    const full = await (await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/' + emailId + '?format=full', { headers: { Authorization: 'Bearer ' + token } })).json();
+    const h = full.payload?.headers || [];
+    const body = extractBody(full.payload);
+    const summary = await claude('Analyze for Shivender Malik (DCF head, CARS24/Loans24).\n1. TL;DR (2 sentences)\n2. Action needed? Yes/No + what\n3. Priority\n\nFrom: ' + getH(h,'From') + '\nSubject: ' + getH(h,'Subject') + '\nBody: ' + body.substring(0,2000));
+    box.innerHTML = '<div style="font-size:11px;line-height:1.7;white-space:pre-wrap;color:var(--g800)">' + esc(summary) + '</div>' +
+      '<div class="reply-actions" style="margin-top:8px"><button class="btn btn-outline btn-sm" onclick="document.getElementById(\'reply-' + cardId + '\').classList.remove(\'open\')">Close</button></div>';
+  } catch(e) { box.innerHTML = '<div style="color:var(--red);font-size:11px">Error</div>'; }
 }
 
-function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
-function copyDraft() { navigator.clipboard.writeText(document.getElementById('draft-text').value).then(() => { showStatus('✓ Copied!'); setTimeout(hideStatus, 1500); }); }
-
-function showStatus(m) { const b=document.getElementById('status-bar'); b.textContent=m; b.style.display='block'; }
-function hideStatus() { document.getElementById('status-bar').style.display='none'; }
-function showProgress(p) { document.getElementById('progress-wrap').style.display='block'; document.getElementById('progress-bar').style.width=p+'%'; }
-function hideProgress() { document.getElementById('progress-wrap').style.display='none'; }
-function show(id) { document.getElementById(id).style.display='block'; }
-function hide(id) { document.getElementById(id).style.display='none'; }
-
-function saveState() { 
-  sessionStorage.setItem('st_snoozed', JSON.stringify(snoozed)); 
-  sessionStorage.setItem('st_followups', JSON.stringify(followUps)); 
-}
-function loadState() {
-  try { snoozed = JSON.parse(sessionStorage.getItem('st_snoozed')||'{}'); } catch(e) { snoozed={}; }
-  try { followUps = JSON.parse(sessionStorage.getItem('st_followups')||'{}'); } catch(e) { followUps={}; }
-  try { triage = JSON.parse(localStorage.getItem('st_triage')||'{}'); } catch(e) { triage={}; }
+function copyReply(cardId) {
+  const ta = document.getElementById('rt-' + cardId);
+  if (ta) navigator.clipboard.writeText(ta.value).then(() => setStatus('✓ Copied to clipboard'));
 }
 
-function clearTriageCache() {
-  triage = {};
-  try { localStorage.removeItem('st_triage'); localStorage.removeItem('st_labeled'); } catch(e) {}
-  updateCounts(); renderList();
-  showStatus('✓ Triage cache cleared — run triage to re-analyze');
-  setTimeout(hideStatus, 3000);
-}
-
-function toggleOverflow() {
-  const m = document.getElementById('overflow-menu');
-  m.style.display = m.style.display === 'none' ? 'block' : 'none';
-}
-
-// Close overflow when clicking outside
-document.addEventListener('click', e => {
-  const menu = document.getElementById('overflow-menu');
-  if (menu && !menu.contains(e.target) && !e.target.closest('[onclick="toggleOverflow()"]')) {
-    menu.style.display = 'none';
-  }
-});
-
-// ── DCF MIS ───────────────────────────────────────────────
-let misRawData = [], misFilteredData = [], misFilters = { month: 'All', region: 'All', channel: 'All' };
-let misLoading = false;
-
-function showMIS() {
-  hide('briefing-panel');
-  document.getElementById('message-list').style.display = 'none';
-  document.getElementById('action-bar-main').style.display = 'none';
-  document.getElementById('stats-strip-main').style.display = 'none';
-  hide('detail-panel'); hide('claude-panel'); hide('draft-panel');
-  show('mis-panel');
-  // If data already loaded, just show it
-  if (misRawData.length > 0) {
-    document.getElementById('mis-empty').style.display = 'none';
-    document.getElementById('mis-dashboard').style.display = 'block';
-  }
-}
-
-async function fetchSheetTabs() {
-  const url = document.getElementById('mis-sheet-url').value.trim();
-  if (!url) return;
-  const idMatch = url.match(/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
-  if (!idMatch) { misStatus('Invalid Google Sheets URL'); return; }
-  misStatus('Fetching sheet tabs...');
+// ── MIS DATA ─────────────────────────────────────────────
+async function loadMISData() {
+  document.getElementById('mis-loading').style.display = 'block';
+  setMISStatus('Loading MIS data...');
   try {
-    const res = await fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${idMatch[1]}?fields=sheets.properties`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    const meta = await res.json();
-    if (meta.error) { misStatus('Auth error — please sign out and sign in again'); return; }
-    const select = document.getElementById('mis-tab-select');
-    select.innerHTML = '<option value="">Select sheet tab...</option>';
-    (meta.sheets || []).forEach(s => {
-      const opt = document.createElement('option');
-      opt.value = s.properties.title;
-      opt.textContent = s.properties.title;
-      // Pre-select tab matching GID in URL
-      const gidMatch = url.match(/gid=(\d+)/);
-      if (gidMatch && String(s.properties.sheetId) === String(gidMatch[1])) opt.selected = true;
-      select.appendChild(opt);
-    });
-    select.style.display = 'block';
-    misStatus('');
-    document.getElementById('mis-status').style.display = 'none';
-  } catch(e) { misStatus('Error: ' + e.message); }
-}
-
-async function loadMIS() {
-  if (misLoading) return;
-  misLoading = true;
-  const url = document.getElementById('mis-sheet-url').value.trim();
-  if (!url) { misLoading = false; return; }
-  const idMatch = url.match(/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
-  if (!idMatch) { misStatus('Invalid Google Sheets URL'); misLoading = false; return; }
-
-  document.getElementById('mis-empty').style.display = 'none';
-  document.getElementById('mis-dashboard').style.display = 'none';
-
-  try {
-    const sheetId = idMatch[1];
-    const tabName = document.getElementById('mis-tab-select').value || 'New_Raw_Data';
-
-    // Fetch header row first
-    misStatus('Reading headers from ' + tabName + '...');
-    const hRes = await fetch(
-      'https://sheets.googleapis.com/v4/spreadsheets/' + sheetId + '/values/' + encodeURIComponent(tabName) + '!1:1',
-      { headers: { Authorization: 'Bearer ' + token } }
-    );
+    const hRes = await fetch('https://sheets.googleapis.com/v4/spreadsheets/' + SHEET_ID + '/values/' + encodeURIComponent(SHEET_TAB) + '!1:1', { headers: { Authorization: 'Bearer ' + token } });
     const hData = await hRes.json();
-    if (hData.error) {
-      misStatus('Error: ' + (hData.error.status === 'UNAUTHENTICATED' ? 'Sign out and sign in again' : hData.error.message));
-      misLoading = false; return;
-    }
+    if (hData.error) { setMISStatus('MIS auth error — sign out and sign back in'); return; }
     const headers = hData.values ? hData.values[0] : [];
-    if (!headers.length) { misStatus('No headers found in ' + tabName); misLoading = false; return; }
+    if (!headers.length) { setMISStatus('No headers found'); return; }
 
-    // Fetch data in batches of 3000 rows
-    const BATCH = 3000;
-    let allRows = [];
-    let startRow = 2;
-    let batchNum = 0;
-
+    const BATCH = 1000;
+    let allRows = [], startRow = 2, batchNum = 0;
     while (true) {
       batchNum++;
-      const endRow = startRow + BATCH - 1;
-      misStatus('Loading batch ' + batchNum + ' (rows ' + startRow + '-' + endRow + ')... ' + allRows.length + ' rows loaded');
-
-      const dRes = await fetch(
-        'https://sheets.googleapis.com/v4/spreadsheets/' + sheetId + '/values/' + encodeURIComponent(tabName) + '!A' + startRow + ':BJ' + endRow,
-        { headers: { Authorization: 'Bearer ' + token } }
-      );
+      setMISStatus('Loading batch ' + batchNum + ' (' + allRows.length + ' rows)...');
+      const dRes = await fetch('https://sheets.googleapis.com/v4/spreadsheets/' + SHEET_ID + '/values/' + encodeURIComponent(SHEET_TAB) + '!A' + startRow + ':BJ' + (startRow + BATCH - 1), { headers: { Authorization: 'Bearer ' + token } });
       const dData = await dRes.json();
-
-      if (dData.error) { misStatus('Error on batch ' + batchNum + ': ' + dData.error.message); misLoading = false; return; }
-      if (!dData.values || dData.values.length === 0) break;
-
+      if (dData.error || !dData.values || !dData.values.length) break;
       allRows = allRows.concat(dData.values);
       if (dData.values.length < BATCH) break;
       startRow += BATCH;
     }
 
-    if (!allRows.length) { misStatus('No data found in ' + tabName); misLoading = false; return; }
-
-    misStatus('Parsing ' + allRows.length + ' rows...');
-    misRawData = allRows.map(function(row) {
-      var o = {};
-      headers.forEach(function(h, i) { o[h] = row[i] || ''; });
-      return o;
+    misData = allRows.map(function(row) {
+      var o = {}; headers.forEach(function(h, i) { o[h] = row[i] || ''; }); return o;
     });
-
-    document.getElementById('mis-status').style.display = 'none';
-    document.getElementById('mis-refresh-btn').style.display = 'inline-flex';
-    buildMISFilters();
-    applyMISFilters();
-    misLoading = false;
-
-  } catch(e) { misStatus('Error: ' + e.message); misLoading = false; }
+    misLoaded = true;
+    document.getElementById('mis-loading').style.display = 'none';
+    computeMISMetrics();
+    renderBizNumbers();
+    renderAlerts();
+    renderMISView();
+  } catch(e) { setMISStatus('Error: ' + e.message); }
 }
 
+function setMISStatus(msg) { document.getElementById('mis-status-text').textContent = msg; }
 
-function misStatus(msg) {
-  const el = document.getElementById('mis-status');
-  if (!msg) { el.style.display = 'none'; return; }
-  el.style.display = 'block'; el.textContent = msg;
+function computeMISMetrics() {
+  const dates = misData.map(r => parseD(r['LEAD_CREATION_DATE'])).filter(Boolean);
+  if (!dates.length) return;
+  const today = new Date(Math.max(...dates.map(d => d.getTime())));
+  const mtdS = new Date(today.getFullYear(), today.getMonth(), 1);
+  const lmS = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+  const lmE = new Date(today.getFullYear(), today.getMonth(), 0);
+  const lmtdE = new Date(lmS.getFullYear(), lmS.getMonth(), today.getDate());
+
+  const inR = (val, s, e) => { const d = parseD(val); return d && d >= s && d <= e; };
+  const mtdL = misData.filter(r => inR(r['LEAD_CREATION_DATE'], mtdS, today));
+  const lmtdL = misData.filter(r => inR(r['LEAD_CREATION_DATE'], lmS, lmtdE));
+  const lmL = misData.filter(r => inR(r['LEAD_CREATION_DATE'], lmS, lmE));
+  const mtdLo = misData.filter(r => inR(r['LOGIN_DATE'], mtdS, today));
+  const lmtdLo = misData.filter(r => inR(r['LOGIN_DATE'], lmS, lmtdE));
+  const mtdA = misData.filter(r => inR(r['APPROVAL_DATE'], mtdS, today));
+  const lmtdA = misData.filter(r => inR(r['APPROVAL_DATE'], lmS, lmtdE));
+  const lmA = misData.filter(r => inR(r['APPROVAL_DATE'], lmS, lmE));
+  const mtdD = misData.filter(r => inR(r['DISBURSAL_DATE'], mtdS, today));
+  const lmtdD = misData.filter(r => inR(r['DISBURSAL_DATE'], lmS, lmtdE));
+  const lmD = misData.filter(r => inR(r['DISBURSAL_DATE'], lmS, lmE));
+  const gmv = r => parseFloat(r['LOAN_SANCTION']) || 0;
+  const gcShare = d => d.length ? Math.round(d.filter(r => r['DS_CHANNEL_']?.includes('Green')).length / d.length * 100) : 0;
+  const pct = (a, b) => b > 0 ? Math.round(a / b * 100) : 0;
+  const dlt = (a, b) => b > 0 ? Math.round((a - b) / b * 100) : 0;
+
+  misMetrics = {
+    today, mtdS, lmS, lmE, lmtdE,
+    leads: { mtd: mtdL.length, lmtd: lmtdL.length, lm: lmL.length },
+    logins: { mtd: mtdLo.length, lmtd: lmtdLo.length },
+    approvals: { mtd: mtdA.length, lmtd: lmtdA.length, lm: lmA.length },
+    disb: { mtd: mtdD.length, lmtd: lmtdD.length, lm: lmD.length },
+    gmv: { mtd: mtdD.reduce((s, r) => s + gmv(r), 0), lmtd: lmtdD.reduce((s, r) => s + gmv(r), 0) },
+    l2l: pct(mtdLo.length, mtdL.length),
+    a2d: pct(mtdD.length, mtdA.length),
+    gc: gcShare(mtdD),
+    dlt_disb: dlt(mtdD.length, lmtdD.length),
+    dlt_leads: dlt(mtdL.length, lmtdL.length),
+    inR, mtdL, lmtdL, lmL, mtdLo, lmtdLo, mtdA, lmtdA, lmA, mtdD, lmtdD, lmD, pct, dlt, gcShare
+  };
 }
 
-function buildMISFilters() {
-  const months = [...new Set(misRawData.map(r => r['DISBURSAL_MONTH']).filter(Boolean))].sort().reverse();
-  const regions = [...new Set(misRawData.map(r => r['REGION']).filter(Boolean))].sort();
-  const channels = [...new Set(misRawData.map(r => r['Channel Revised']).filter(Boolean))].sort();
-  const mf = document.getElementById('mis-month-filters');
-  const rf = document.getElementById('mis-region-filters');
-  const cf = document.getElementById('mis-channel-filters');
-  mf.innerHTML = misFilterBtn('All','month',true); months.forEach(m => mf.innerHTML += misFilterBtn(m,'month'));
-  rf.innerHTML = misFilterBtn('All','region',true); regions.forEach(r => rf.innerHTML += misFilterBtn(r,'region'));
-  cf.innerHTML = misFilterBtn('All','channel',true); channels.slice(0,6).forEach(c => cf.innerHTML += misFilterBtn(c,'channel'));
-  document.getElementById('mis-filters').style.display = 'flex';
+function renderBizNumbers() {
+  const m = misMetrics;
+  if (!m.leads) return;
+  const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  const setClass = (id, cls) => { const el = document.getElementById(id); if (el) el.className = 'biz-card ' + cls; };
+  const dltHtml = (v) => v > 0 ? '▲' + v + '% vs LMTD' : v < 0 ? '▼' + Math.abs(v) + '% vs LMTD' : '— vs LMTD';
+
+  set('b-disb', m.disb.mtd.toLocaleString());
+  set('b-disb-sub', dltHtml(m.dlt_disb) + ' · LM ' + m.disb.lm);
+  set('b-gmv', '₹' + (m.gmv.mtd / 1e7).toFixed(1) + 'Cr');
+  set('b-gmv-sub', 'LMTD ₹' + (m.gmv.lmtd / 1e7).toFixed(1) + 'Cr');
+  set('b-leads', m.leads.mtd.toLocaleString());
+  set('b-leads-sub', dltHtml(m.dlt_leads) + ' · LM ' + m.leads.lm);
+  set('b-logins', m.logins.mtd.toLocaleString());
+  set('b-logins-sub', 'LMTD ' + m.logins.lmtd);
+  set('b-l2l', m.l2l + '%');
+  set('b-a2d', m.a2d + '%');
+  set('b-gc', m.gc + '%');
+
+  setClass('b-l2l-card', 'biz-card ' + (m.l2l >= 45 ? 'c-green' : 'c-red'));
+  setClass('b-a2d-card', 'biz-card ' + (m.a2d >= 40 ? 'c-green' : 'c-red'));
+  setClass('b-gc-card', 'biz-card ' + (m.gc >= 55 ? 'c-green' : 'c-red'));
 }
 
-function misFilterBtn(label, type, active=false) {
-  return `<button style="border:1px solid ${active?'var(--purple)':'var(--grey-200)'};background:${active?'var(--purple)':'var(--white)'};color:${active?'var(--white)':'var(--grey-600)'};border-radius:20px;padding:5px 12px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Montserrat',sans-serif" onclick="setMISFilter('${type}','${label}',this)">${label}</button>`;
-}
+function renderAlerts() {
+  const m = misMetrics;
+  if (!m.l2l) return;
+  const alerts = [];
+  if (m.l2l < 45) alerts.push({ type: 'red', msg: '🔴 L2L ' + m.l2l + '% below 45% threshold' });
+  if (m.a2d < 40) alerts.push({ type: 'red', msg: '🔴 A2D ' + m.a2d + '% below 40% threshold' });
+  if (m.gc < 55) alerts.push({ type: 'red', msg: '🔴 GC Share ' + m.gc + '% below 55% threshold' });
 
-function setMISFilter(type, value, el) {
-  misFilters[type] = value;
-  el.closest('div').querySelectorAll('button').forEach(b => { b.style.background='var(--white)'; b.style.borderColor='var(--grey-200)'; b.style.color='var(--grey-600)'; });
-  el.style.background='var(--purple)'; el.style.borderColor='var(--purple)'; el.style.color='var(--white)';
-  applyMISFilters();
-}
-
-function applyMISFilters() {
-  misFilteredData = misRawData.filter(r => {
-    if (misFilters.month !== 'All' && r['DISBURSAL_MONTH'] !== misFilters.month) return false;
-    if (misFilters.region !== 'All' && r['REGION'] !== misFilters.region) return false;
-    if (misFilters.channel !== 'All' && r['Channel Revised'] !== misFilters.channel) return false;
-    return true;
+  // RSM level alerts
+  const rsms = [...new Set(misData.map(r => r['RSM_MAPPING']).filter(r => r && r !== 'Unmapped'))];
+  rsms.forEach(rsm => {
+    const rsmD = m.mtdD.filter(r => r['RSM_MAPPING'] === rsm);
+    const rsmA = m.mtdA.filter(r => r['RSM_MAPPING'] === rsm);
+    const rsmL = m.mtdL.filter(r => r['RSM_MAPPING'] === rsm);
+    const rsmLo = m.mtdLo.filter(r => r['RSM_MAPPING'] === rsm);
+    if (rsmL.length < 10) return;
+    const rl2l = m.pct(rsmLo.length, rsmL.length);
+    const ra2d = m.pct(rsmD.length, rsmA.length);
+    const rgc = m.gcShare(rsmD);
+    const name = cleanName(rsm);
+    const rAlerts = [];
+    if (rl2l < 45) rAlerts.push('L2L ' + rl2l + '%');
+    if (ra2d < 40 && rsmA.length > 5) rAlerts.push('A2D ' + ra2d + '%');
+    if (rgc < 55 && rsmD.length > 5) rAlerts.push('GC ' + rgc + '%');
+    if (rAlerts.length) alerts.push({ type: 'red', msg: '🔴 ' + name + ': ' + rAlerts.join(', ') });
   });
-  renderMIS();
+
+  const strip = document.getElementById('alerts-strip');
+  if (!alerts.length) {
+    strip.innerHTML = '<span class="alert-chip ok">✓ All metrics within thresholds</span>';
+  } else {
+    strip.innerHTML = alerts.slice(0, 6).map(a => '<div class="alert-chip red">' + a.msg + '</div>').join('');
+  }
+
+  // Update must badge
+  const mustCount = emails.filter(e => triage[e.id]?.priority === 'MUST_READ').length;
+  if (mustCount > 0) {
+    const badge = document.getElementById('must-badge');
+    badge.textContent = mustCount; badge.style.display = 'inline-block';
+    document.getElementById('tab-must').querySelector('.alert-dot')?.remove();
+  }
 }
 
-function renderMIS() {
-  const d = misFilteredData;
-  const disbursed = d.filter(r => r['DISBURSAL_DATE'] && r['DISBURSAL_DATE'] !== '');
-  const logins = d.filter(r => r['LOGIN_DATE'] && r['LOGIN_DATE'] !== '');
-  const approvals = d.filter(r => r['APPROVAL_DATE'] && r['APPROVAL_DATE'] !== '');
-  const gmv = disbursed.reduce((s,r) => s+(parseFloat(r['LOAN_SANCTION'])||0), 0);
-  const avgT = disbursed.length ? gmv/disbursed.length/1000 : 0;
-  const l2d = logins.length ? (disbursed.length/logins.length*100).toFixed(1) : 0;
-  const l2a = logins.length ? (approvals.length/logins.length*100).toFixed(1) : 0;
-  const a2d = approvals.length ? (disbursed.length/approvals.length*100).toFixed(1) : 0;
+function renderMISView() {
+  const m = misMetrics;
+  if (!m.leads) return;
+  const inR = m.inR;
 
-  document.getElementById('mis-kpi').innerHTML = [
-    { label:'Disbursals', val:disbursed.length.toLocaleString(), sub:'cases', color:'#FF5100' },
-    { label:'GMV', val:`₹${(gmv/1e7).toFixed(1)}Cr`, sub:'loan sanctions', color:'#3D3DAA' },
-    { label:'L2D%', val:`${l2d}%`, sub:'login→disbursal', color:'#1A9E5F' },
-    { label:'Logins', val:logins.length.toLocaleString(), sub:'cases', color:'#1976D2' },
-    { label:'Approvals', val:approvals.length.toLocaleString(), sub:'cases', color:'#00796B' },
-    { label:'Avg Ticket', val:`₹${avgT.toFixed(0)}K`, sub:'per disbursal', color:'#E53935' }
-  ].map(k => `<div style="background:var(--white);border:1px solid var(--grey-200);border-radius:14px;padding:16px 14px;box-shadow:0 1px 4px rgba(0,0,0,0.08);position:relative;overflow:hidden">
-    <div style="position:absolute;top:0;left:0;right:0;height:3px;background:${k.color}"></div>
-    <div style="font-size:24px;font-weight:800;letter-spacing:-0.5px;color:${k.color};margin-bottom:3px">${k.val}</div>
-    <div style="font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--grey-400)">${k.label}</div>
-    <div style="font-size:10px;font-weight:600;color:var(--grey-400);margin-top:3px">${k.sub}</div>
-  </div>`).join('');
+  function pctClass(v, t) { return v >= t ? 'pg' : v >= t * 0.8 ? 'pw' : 'pb'; }
+  function dHtml(a, b) { const d = m.dlt(a, b); return d > 0 ? '<span class="up">▲' + d + '%</span>' : d < 0 ? '<span class="dn">▼' + Math.abs(d) + '%</span>' : '<span class="fl">—</span>'; }
+  function gcChip(v) { return '<span class="' + (v >= 55 ? 'gc-ok' : 'gc-bad') + '">' + v + '%</span>'; }
+  function abBadges(arr) { return arr.map(a => '<span class="ab">' + a + '</span>').join(''); }
+  function cleanN(e) {
+    if (!e || e === 'Unmapped' || e === 'Unmapped(L.P)') return e || '-';
+    if (!e.includes('@')) return e;
+    return e.split('@')[0].split('.').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ').replace(/\d+/g,'').trim();
+  }
 
-  document.getElementById('mis-funnel-badge').textContent = `${d.length.toLocaleString()} total leads`;
-  document.getElementById('mis-funnel').innerHTML = [
-    { label:'Leads', val:d.length },
-    { label:'Logins', val:logins.length, rate:`${(logins.length/Math.max(d.length,1)*100).toFixed(1)}%` },
-    { label:'Approvals', val:approvals.length, rate:`L2A ${l2a}%` },
-    { label:'Disbursals', val:disbursed.length, rate:`L2D ${l2d}%` },
-    { label:'A2D%', val:`${a2d}%`, rate:'approval→disbursal' }
-  ].map(s => `<div style="flex:1;text-align:center;padding:16px 8px;border-right:1px solid var(--grey-200)">
-    <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--grey-400);margin-bottom:4px">${s.label}</div>
-    <div style="font-size:20px;font-weight:800;color:var(--purple);margin-bottom:6px">${String(s.val).toLocaleString()}</div>
-    ${s.rate ? `<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:var(--grey-100);color:var(--grey-600)">${s.rate}</span>` : ''}
-  </div>`).join('');
+  const tableHdr = '<thead><tr>' +
+    '<th rowspan="2" style="text-align:left;min-width:130px">Name</th>' +
+    '<th colspan="4" class="grp">Leads</th>' +
+    '<th colspan="4" class="grp">Logins</th>' +
+    '<th colspan="4" class="grp">Approvals</th>' +
+    '<th colspan="4" class="grp">Disbursals</th>' +
+    '<th rowspan="2">L2L%</th><th rowspan="2">A2D%</th><th rowspan="2">GC%</th>' +
+    '</tr><tr>' +
+    '<th>MTD</th><th>LMTD</th><th>LM</th><th>Δ</th>'.repeat(4) +
+    '</tr></thead>';
 
-  const misBar = (data, colorFn, valFn) => {
-    const max = Math.max(...data.map(([,v])=>v.length), 1);
-    return data.sort((a,b)=>b[1].length-a[1].length).slice(0,8).map(([k,v]) => `
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-        <div style="font-size:11px;font-weight:600;color:var(--grey-800);width:110px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${k}">${k}</div>
-        <div style="flex:1;height:6px;background:var(--grey-100);border-radius:3px;overflow:hidden"><div style="height:100%;border-radius:3px;background:${colorFn(k)};width:${v.length/max*100}%"></div></div>
-        <div style="font-size:11px;font-weight:700;color:var(--grey-800);width:70px;text-align:right">${v.length} <span style="color:var(--grey-400);font-size:10px">${valFn(v)}</span></div>
-      </div>`).join('');
+  function mRow(label, data, cls) {
+    return '<tr class="' + (cls || '') + '">' +
+      '<td>' + label + '</td>' +
+      '<td class="num">' + data.leads.mtd + '</td><td>' + data.leads.lmtd + '</td><td>' + data.leads.lm + '</td><td>' + dHtml(data.leads.mtd, data.leads.lmtd) + '</td>' +
+      '<td class="num">' + data.logins.mtd + '</td><td>' + data.logins.lmtd + '</td><td>' + data.logins.lm + '</td><td>' + dHtml(data.logins.mtd, data.logins.lmtd) + '</td>' +
+      '<td class="num">' + data.approvals.mtd + '</td><td>' + data.approvals.lmtd + '</td><td>' + data.approvals.lm + '</td><td>' + dHtml(data.approvals.mtd, data.approvals.lmtd) + '</td>' +
+      '<td class="num">' + data.disb.mtd + '</td><td>' + data.disb.lmtd + '</td><td>' + data.disb.lm + '</td><td>' + dHtml(data.disb.mtd, data.disb.lmtd) + '</td>' +
+      '<td class="' + pctClass(data.l2l, 45) + '">' + data.l2l + '%</td>' +
+      '<td class="' + pctClass(data.a2d, 40) + '">' + data.a2d + '%</td>' +
+      '<td>' + gcChip(data.gc) + '</td>' +
+      '</tr>';
+  }
+
+  function getMetrics(filter) {
+    const fl = m.mtdL.filter(filter), ll = m.lmtdL.filter(filter), lml = m.lmL.filter(filter);
+    const flo = m.mtdLo.filter(filter), llo = m.lmtdLo.filter(filter);
+    const fa = m.mtdA.filter(filter), la = m.lmtdA.filter(filter), lma = m.lmA.filter(filter);
+    const fd = m.mtdD.filter(filter), ld = m.lmtdD.filter(filter), lmd = m.lmD.filter(filter);
+    return {
+      leads: { mtd: fl.length, lmtd: ll.length, lm: lml.length },
+      logins: { mtd: flo.length, lmtd: llo.length, lm: 0 },
+      approvals: { mtd: fa.length, lmtd: la.length, lm: lma.length },
+      disb: { mtd: fd.length, lmtd: ld.length, lm: lmd.length },
+      l2l: m.pct(flo.length, fl.length), a2d: m.pct(fd.length, fa.length),
+      gc: m.gcShare(fd)
+    };
+  }
+
+  const rsms = [...new Set(misData.map(r => r['RSM_MAPPING']).filter(r => r && r !== 'Unmapped' && r !== 'Unmapped(L.P)'))];
+  const rsmMetrics = rsms.map(rsm => ({ rsm, name: cleanN(rsm), ...getMetrics(r => r['RSM_MAPPING'] === rsm) })).sort((a, b) => b.disb.mtd - a.disb.mtd);
+
+  // Overall
+  const overall = {
+    leads: m.leads, logins: { mtd: m.logins.mtd, lmtd: m.logins.lmtd, lm: 0 },
+    approvals: m.approvals, disb: m.disb, l2l: m.l2l, a2d: m.a2d, gc: m.gc
   };
 
-  const chG = misGroupBy(disbursed,'Channel Revised');
-  document.getElementById('mis-ch-badge').textContent = `${disbursed.length} cases`;
-  document.getElementById('mis-channel-chart').innerHTML = misBar(Object.entries(chG), ()=>'#3D3DAA', v=>`₹${(v.reduce((s,r)=>s+(parseFloat(r['LOAN_SANCTION'])||0),0)/1e7).toFixed(1)}Cr`);
+  let html = '<div class="card"><div class="card-hdr"><div class="card-title">RSM / SM Performance — MTD vs LMTD vs LM</div><span class="card-badge">Click RSM to expand SMs</span></div>';
+  html += '<div style="overflow-x:auto"><table class="mis-table">' + tableHdr + '<tbody>';
+  html += mRow('▶ OVERALL', overall, 'total');
 
-  const regG = misGroupBy(disbursed,'REGION');
-  document.getElementById('mis-region-chart').innerHTML = misBar(Object.entries(regG), ()=>'#1A9E5F', v=>`${(v.length/Math.max(disbursed.length,1)*100).toFixed(0)}%`);
+  rsmMetrics.forEach((rsm, ri) => {
+    const rAlerts = [];
+    if (rsm.l2l < 45 && rsm.leads.mtd > 10) rAlerts.push('L2L');
+    if (rsm.a2d < 40 && rsm.approvals.mtd > 5) rAlerts.push('A2D');
+    if (rsm.gc < 55 && rsm.disb.mtd > 5) rAlerts.push('GC');
+    const label = '<span class="exp" onclick="toggleSub(' + ri + ')">▶</span>' + rsm.name + abBadges(rAlerts);
+    html += mRow(label, rsm, rAlerts.length ? 'alert-r' : '');
 
-  const dsG = misGroupBy(disbursed,'DS_CHANNEL_');
-  const dsC = {'GreenChannelQualified-Cars24_BL':'#1A9E5F','GreenChannelQualified-Cars24':'#1A9E5F','AmberChannel':'#F9A825','RedChannel':'#E53935','na':'#999'};
-  const dsL = {'GreenChannelQualified-Cars24_BL':'Green (BL)','GreenChannelQualified-Cars24':'Green (Q)','AmberChannel':'Amber','RedChannel':'Red','na':'NA'};
-  const dsMax = Math.max(...Object.values(dsG).map(v=>v.length),1);
-  document.getElementById('mis-ds-chart').innerHTML = Object.entries(dsG).sort((a,b)=>b[1].length-a[1].length).map(([k,v])=>`
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-      <div style="font-size:11px;font-weight:600;color:var(--grey-800);width:80px;flex-shrink:0">${dsL[k]||k}</div>
-      <div style="flex:1;height:6px;background:var(--grey-100);border-radius:3px;overflow:hidden"><div style="height:100%;border-radius:3px;background:${dsC[k]||'#999'};width:${v.length/dsMax*100}%"></div></div>
-      <div style="font-size:11px;font-weight:700;color:var(--grey-800);width:60px;text-align:right">${v.length} <span style="color:var(--grey-400);font-size:10px">${(v.length/Math.max(disbursed.length,1)*100).toFixed(0)}%</span></div>
-    </div>`).join('');
+    // SM rows
+    const sms = [...new Set(misData.filter(r => r['RSM_MAPPING'] === rsm.rsm).map(r => r['SM_MAPPING']).filter(s => s && s !== 'Unmapped'))];
+    const smMetrics = sms.map(sm => ({ sm, name: cleanN(sm), ...getMetrics(r => r['RSM_MAPPING'] === rsm.rsm && r['SM_MAPPING'] === sm) })).sort((a, b) => b.disb.mtd - a.disb.mtd);
 
-  const rbG = misGroupBy(disbursed.filter(r=>r['RISK_BUCKET']&&r['RISK_BUCKET']!=='na'),'RISK_BUCKET');
-  const rbC = {A:'#1A9E5F',B:'#43A047',C:'#F9A825',D:'#FF5100',E:'#E53935'};
-  const rbMax = Math.max(...Object.values(rbG).map(v=>v.length),1);
-  document.getElementById('mis-risk-chart').innerHTML = ['A','B','C','D','E'].filter(k=>rbG[k]).map(k=>{
-    const v=rbG[k];
-    return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-      <div style="font-size:11px;font-weight:600;color:var(--grey-800);width:60px">Risk ${k}</div>
-      <div style="flex:1;height:6px;background:var(--grey-100);border-radius:3px;overflow:hidden"><div style="height:100%;border-radius:3px;background:${rbC[k]};width:${v.length/rbMax*100}%"></div></div>
-      <div style="font-size:11px;font-weight:700;color:var(--grey-800);width:60px;text-align:right">${v.length} <span style="color:var(--grey-400);font-size:10px">${(v.length/Math.max(disbursed.length,1)*100).toFixed(0)}%</span></div>
-    </div>`;}).join('');
+    html += '<tbody class="sub-body" id="sub-' + ri + '">';
+    smMetrics.forEach(sm => {
+      const sAlerts = [];
+      if (sm.l2l < 45 && sm.leads.mtd > 5) sAlerts.push('L2L');
+      if (sm.a2d < 40 && sm.approvals.mtd > 3) sAlerts.push('A2D');
+      if (sm.gc < 55 && sm.disb.mtd > 3) sAlerts.push('GC');
+      html += mRow('<span style="padding-left:12px">↳ ' + sm.name + abBadges(sAlerts) + '</span>', sm, 'sm-r' + (sAlerts.length ? ' alert-r' : ''));
+    });
 
-  const bookG = misGroupBy(disbursed,'NBFC Channel');
-  document.getElementById('mis-book-chart').innerHTML = misBar(Object.entries(bookG), ()=>'#6B6BC8', v=>`₹${(v.reduce((s,r)=>s+(parseFloat(r['LOAN_SANCTION'])||0),0)/1e7).toFixed(1)}Cr`);
+    // Top 20 dealers by LM disbursals
+    const dealerMap = {};
+    m.lmD.filter(r => r['RSM_MAPPING'] === rsm.rsm).forEach(r => {
+      const k = r['DEALER_CODEE'] || r['DEALER_NAME'];
+      if (!k) return;
+      if (!dealerMap[k]) dealerMap[k] = { name: r['DEALER_NAME'] || k, lmD: 0, mtdD: 0, mtdL: 0, lmtdL: 0 };
+      dealerMap[k].lmD++;
+    });
+    m.mtdD.filter(r => r['RSM_MAPPING'] === rsm.rsm).forEach(r => { const k = r['DEALER_CODEE'] || r['DEALER_NAME']; if (dealerMap[k]) dealerMap[k].mtdD++; });
+    m.mtdL.filter(r => r['RSM_MAPPING'] === rsm.rsm).forEach(r => { const k = r['DEALER_CODEE'] || r['DEALER_NAME']; if (dealerMap[k]) dealerMap[k].mtdL++; });
+    m.lmtdL.filter(r => r['RSM_MAPPING'] === rsm.rsm).forEach(r => { const k = r['DEALER_CODEE'] || r['DEALER_NAME']; if (dealerMap[k]) dealerMap[k].lmtdL++; });
 
-  const mG = misGroupBy(disbursed,'DISBURSAL_MONTH');
-  document.getElementById('mis-monthly-table').innerHTML = `
-    <thead><tr style="background:var(--grey-50)">${['Month','Disbursals','GMV (₹Cr)','Avg Ticket','L2D%','Green%','Amber%'].map(h=>`<th style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--grey-400);padding:10px 12px;text-align:left;border-bottom:1px solid var(--grey-200)">${h}</th>`).join('')}</tr></thead>
-    <tbody>${Object.keys(mG).sort().reverse().map(m=>{
-      const rows=mG[m], mGmv=rows.reduce((s,r)=>s+(parseFloat(r['LOAN_SANCTION'])||0),0);
-      const mL=d.filter(r=>r['LOGIN_DATE']&&r['DISBURSAL_MONTH']===m);
-      const mL2d=mL.length?(rows.length/mL.length*100).toFixed(1):'-';
-      const gPct=rows.length?(rows.filter(r=>r['DS_CHANNEL_']?.includes('Green')).length/rows.length*100).toFixed(0):0;
-      const aPct=rows.length?(rows.filter(r=>r['DS_CHANNEL_']==='AmberChannel').length/rows.length*100).toFixed(0):0;
-      const lc=parseFloat(mL2d)>40?'#1A9E5F':'#FF5100';
-      return `<tr style="border-bottom:1px solid var(--grey-100)">
-        <td style="padding:10px 12px;font-size:12px;font-weight:700">${m}</td>
-        <td style="padding:10px 12px;font-size:12px;font-weight:700">${rows.length.toLocaleString()}</td>
-        <td style="padding:10px 12px;font-size:12px;font-weight:700">₹${(mGmv/1e7).toFixed(1)}</td>
-        <td style="padding:10px 12px;font-size:12px;color:var(--grey-600)">₹${rows.length?(mGmv/rows.length/1000).toFixed(0):0}K</td>
-        <td style="padding:10px 12px"><span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:6px;background:${lc}20;color:${lc}">${mL2d}%</span></td>
-        <td style="padding:10px 12px"><span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:6px;background:#E8F7F0;color:#1A9E5F">${gPct}%</span></td>
-        <td style="padding:10px 12px"><span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:6px;background:#FFFDE7;color:#F9A825">${aPct}%</span></td>
-      </tr>`;}).join('')}</tbody>`;
+    const topDealers = Object.values(dealerMap).sort((a, b) => b.lmD - a.lmD).slice(0, 20);
+    if (topDealers.length) {
+      html += '<tr><td colspan="21" style="background:var(--g50);font-size:8px;font-weight:700;color:var(--g400);text-transform:uppercase;letter-spacing:1px;padding:5px 20px">Top 20 Dealers by LM Disbursals</td></tr>';
+      topDealers.forEach(d => {
+        html += '<tr class="dealer-r"><td>' + (d.name||'').substring(0,28) + '</td>' +
+          '<td class="num">' + d.mtdL + '</td><td>' + d.lmtdL + '</td><td>—</td><td>' + dHtml(d.mtdL, d.lmtdL) + '</td>' +
+          '<td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td>' +
+          '<td class="num">' + d.mtdD + '</td><td>—</td><td class="num">' + d.lmD + '</td><td>—</td>' +
+          '<td>—</td><td>—</td><td>—</td></tr>';
+      });
+    }
+    html += '</tbody>';
+  });
+  html += '</tbody></table></div></div>';
 
-  document.getElementById('mis-dashboard').style.display = 'block';
+  // Top 10 degrow dealers
+  const degMap = {};
+  m.mtdL.forEach(r => { const k = r['DEALER_CODEE'] || r['DEALER_NAME']; if (!k) return; if (!degMap[k]) degMap[k] = { name: r['DEALER_NAME']||k, rsm: cleanN(r['RSM_MAPPING']), mtd: 0, lmtd: 0 }; degMap[k].mtd++; });
+  m.lmtdL.forEach(r => { const k = r['DEALER_CODEE'] || r['DEALER_NAME']; if (!k) return; if (!degMap[k]) degMap[k] = { name: r['DEALER_NAME']||k, rsm: cleanN(r['RSM_MAPPING']), mtd: 0, lmtd: 0 }; degMap[k].lmtd++; });
+  const degrow = Object.values(degMap).map(d => ({ ...d, drop: d.lmtd - d.mtd })).filter(d => d.drop > 0 && d.lmtd > 2).sort((a, b) => b.drop - a.drop).slice(0, 10);
+
+  html += '<div class="card"><div class="card-hdr"><div class="card-title">📉 Top 10 Degrowing Dealers — Lead Drop MTD vs LMTD</div></div>';
+  html += '<div style="overflow-x:auto"><table class="mis-table"><thead><tr><th style="text-align:left">Dealer</th><th style="text-align:left">RSM</th><th>MTD Leads</th><th>LMTD Leads</th><th>Drop</th><th>Drop %</th></tr></thead><tbody>';
+  degrow.forEach(d => {
+    html += '<tr><td>' + (d.name||'').substring(0,30) + '</td><td style="text-align:left;color:var(--g400)">' + (d.rsm||'-') + '</td>' +
+      '<td class="num">' + d.mtd + '</td><td>' + d.lmtd + '</td>' +
+      '<td><span style="background:var(--red-bg);color:var(--red);font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px">▼ ' + d.drop + '</span></td>' +
+      '<td class="pb">-' + m.pct(d.drop, d.lmtd) + '%</td></tr>';
+  });
+  html += '</tbody></table></div></div>';
+
+  document.getElementById('mis-content').innerHTML = html;
 }
 
-function misGroupBy(arr, key) {
-  return arr.reduce((acc,row) => { const k=row[key]||'Unknown'; acc[k]=acc[k]||[]; acc[k].push(row); return acc; }, {});
+function toggleSub(idx) {
+  const el = document.getElementById('sub-' + idx);
+  if (!el) return;
+  el.classList.toggle('open');
+  const row = el.previousElementSibling;
+  const exp = row?.querySelector?.('.exp');
+  if (exp) exp.textContent = el.classList.contains('open') ? '▼' : '▶';
 }
 
+// ── GMAIL LABELS ─────────────────────────────────────────
+async function applyLabels() {
+  if (!Object.keys(triage).length) { setStatus('Run triage first'); setTimeout(hideStatus, 2000); return; }
+  setStatus('Applying Gmail labels...');
+  let labeled = {}; try { labeled = JSON.parse(localStorage.getItem('st_labeled') || '{}'); } catch(e) {}
+  const toLabel = Object.entries(triage).filter(([id]) => !labeled[id]);
+  if (!toLabel.length) { setStatus('✓ Already labeled'); setTimeout(hideStatus, 2000); return; }
+  const defs = [{ name: 'Shivi-twin/Must-Act', color: { backgroundColor: '#fb4c2f', textColor: '#ffffff' } }, { name: 'Shivi-twin/DCF', color: { backgroundColor: '#4a86e8', textColor: '#ffffff' } }, { name: 'Shivi-twin/Skim', color: { backgroundColor: '#ffad47', textColor: '#ffffff' } }, { name: 'Shivi-twin/Ignore', color: { backgroundColor: '#999999', textColor: '#ffffff' } }];
+  const gmailLabels = {};
+  try { const r = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/labels', { headers: { Authorization: 'Bearer ' + token } }); const d = await r.json(); (d.labels||[]).forEach(l => { gmailLabels[l.name] = l.id; }); } catch(e) {}
+  for (const ld of defs) { if (!gmailLabels[ld.name]) { try { const r = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/labels', { method: 'POST', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify({ name: ld.name, color: ld.color, labelListVisibility: 'labelShow', messageListVisibility: 'show' }) }); const d = await r.json(); if (d.id) gmailLabels[ld.name] = d.id; } catch(e) {} } }
+  const pMap = { MUST_READ: 'Shivi-twin/Must-Act', DCF: 'Shivi-twin/DCF', SKIM: 'Shivi-twin/Skim', IGNORE: 'Shivi-twin/Ignore' };
+  let applied = 0;
+  for (let i = 0; i < toLabel.length; i += 20) {
+    const batch = toLabel.slice(i, i + 20);
+    await Promise.all(batch.map(async ([id, t]) => {
+      const lid = gmailLabels[pMap[t.priority]]; if (!lid) return;
+      try { const r = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/' + id + '/modify', { method: 'POST', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify({ addLabelIds: [lid] }) }); if (r.ok) { applied++; labeled[id] = true; } } catch(e) {}
+    }));
+    setStatus('Labeling ' + Math.min(i + 20, toLabel.length) + '/' + toLabel.length);
+  }
+  try { localStorage.setItem('st_labeled', JSON.stringify(labeled)); } catch(e) {}
+  setStatus('✓ Labeled ' + applied + ' emails'); setTimeout(hideStatus, 3000);
+}
+
+// ── SHARE ────────────────────────────────────────────────
+function buildTeammateGrid() {
+  const grid = document.getElementById('teammate-grid');
+  grid.innerHTML = TEAMMATES.map((t, i) =>
+    '<div class="teammate-chip" id="tc-' + i + '" onclick="toggleTeammate(' + i + ')">' +
+    '<div><div class="teammate-name">' + t.name + '</div><div class="teammate-role">' + t.role + '</div></div>' +
+    '</div>'
+  ).join('');
+}
+
+function toggleTeammate(i) {
+  const el = document.getElementById('tc-' + i);
+  const idx = selectedTeammates.indexOf(i);
+  if (idx >= 0) { selectedTeammates.splice(idx, 1); el.classList.remove('selected'); }
+  else { selectedTeammates.push(i); el.classList.add('selected'); }
+}
+
+function selectVia(via) {
+  shareVia = via;
+  document.getElementById('via-email').classList.toggle('selected', via === 'email');
+  document.getElementById('via-slack').classList.toggle('selected', via === 'slack');
+}
+
+function openShare() { document.getElementById('share-modal').classList.add('open'); }
+function closeShare() { document.getElementById('share-modal').classList.remove('open'); }
+function closeShareIfBg(e) { if (e.target === document.getElementById('share-modal')) closeShare(); }
+
+async function sendShare() {
+  if (!selectedTeammates.length) { alert('Select at least one teammate'); return; }
+  const m = misMetrics;
+  const subject = 'DCF MIS Snapshot — ' + new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+  const body = 'DCF Daily Snapshot\n\n' +
+    'MTD Disbursals: ' + (m.disb?.mtd || '—') + ' (LMTD: ' + (m.disb?.lmtd || '—') + ')\n' +
+    'MTD GMV: ₹' + ((m.gmv?.mtd || 0) / 1e7).toFixed(1) + 'Cr\n' +
+    'MTD Leads: ' + (m.leads?.mtd || '—') + '\n' +
+    'L2L%: ' + (m.l2l || '—') + '% | A2D%: ' + (m.a2d || '—') + '% | GC Share: ' + (m.gc || '—') + '%\n\n' +
+    'View full dashboard: ' + location.href;
+
+  const recipients = selectedTeammates.map(i => TEAMMATES[i].email);
+
+  if (shareVia === 'email') {
+    // Open Gmail compose via mailto
+    const mailto = 'mailto:' + recipients.join(',') + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+    window.open(mailto);
+    closeShare();
+    setStatus('✓ Opening email composer');
+    setTimeout(hideStatus, 3000);
+  } else {
+    setStatus('Slack share coming soon');
+    setTimeout(hideStatus, 2000);
+  }
+}
+
+// ── COUNTDOWN ────────────────────────────────────────────
+function startCountdown() {
+  nextTriage = Date.now() + 3 * 3600000;
+  document.getElementById('timer-tag').style.display = 'inline-block';
+  updateTimer();
+  countdownInt = setInterval(() => {
+    if (Date.now() >= nextTriage) { runTriage(); nextTriage = Date.now() + 3 * 3600000; }
+    updateTimer();
+  }, 1000);
+}
+
+function updateTimer() {
+  const r = Math.max(0, nextTriage - Date.now());
+  const h = Math.floor(r / 3600000), mn = Math.floor((r % 3600000) / 60000), s = Math.floor((r % 60000) / 1000);
+  document.getElementById('timer-val').textContent = String(h).padStart(2,'0') + ':' + String(mn).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+}
+
+// ── CLAUDE ───────────────────────────────────────────────
+async function claude(prompt) {
+  try {
+    const r = await fetch(PROXY, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 2000, messages: [{ role: 'user', content: prompt }] }) });
+    const d = await r.json(); return d.content?.[0]?.text || '';
+  } catch(e) { return ''; }
+}
+
+// ── HELPERS ──────────────────────────────────────────────
+function parseD(val) { if (!val) return null; const d = new Date(val); return isNaN(d.getTime()) ? null : d; }
+function getH(h, n) { return h.find(x => x.name.toLowerCase() === n.toLowerCase())?.value; }
+function extractBody(payload) {
+  if (!payload) return '';
+  if (payload.body?.data) { try { return atob(payload.body.data.replace(/-/g,'+').replace(/_/g,'/')); } catch(e) { return ''; } }
+  if (payload.parts) { for (const p of payload.parts) { if (p.mimeType === 'text/plain' && p.body?.data) { try { return atob(p.body.data.replace(/-/g,'+').replace(/_/g,'/')); } catch(e) {} } } for (const p of payload.parts) { const n = extractBody(p); if (n) return n; } }
+  return '';
+}
+function fmtDate(s) {
+  if (!s) return '';
+  try { const d = new Date(s), n = new Date(), df = n - d; if (df < 86400000) return d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}); if (df < 604800000) return d.toLocaleDateString([],{weekday:'short'}); return d.toLocaleDateString([],{month:'short',day:'numeric'}); } catch(e) { return ''; }
+}
+function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function cleanName(e) { if (!e || e === 'Unmapped' || e === 'Unmapped(L.P)') return e||'-'; if (!e.includes('@')) return e; return e.split('@')[0].split('.').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ').replace(/\d+/g,'').trim(); }
+function setStatus(m) { const b = document.getElementById('status-bar'); b.textContent = m; b.style.display = 'block'; }
+function hideStatus() { document.getElementById('status-bar').style.display = 'none'; }
+function updateGmailBadge() {
+  const must = emails.filter(e => triage[e.id]?.priority === 'MUST_READ').length;
+  const badge = document.getElementById('gmail-badge');
+  if (must > 0) { badge.textContent = must; badge.style.display = 'inline-block'; }
+  const mustBadge = document.getElementById('must-badge');
+  if (must > 0) { mustBadge.textContent = must; mustBadge.style.display = 'inline-block'; }
+}
+function saveState() { sessionStorage.setItem('st_snoozed', JSON.stringify(snoozed)); sessionStorage.setItem('st_followups', JSON.stringify(followUps)); }
+function loadState() {
+  try { snoozed = JSON.parse(sessionStorage.getItem('st_snoozed')||'{}'); } catch(e) {}
+  try { followUps = JSON.parse(sessionStorage.getItem('st_followups')||'{}'); } catch(e) {}
+  try { triage = JSON.parse(localStorage.getItem('st_triage')||'{}'); } catch(e) {}
+}
+
+// ── INIT ─────────────────────────────────────────────────
 checkAuth();
 </script>
 </body>
