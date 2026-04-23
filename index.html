@@ -883,13 +883,20 @@ function setMISStatus(msg) {
 function computeMISMetrics() {
   const dates = misData.map(r => parseD(r['LEAD_CREATION_DATE'])).filter(Boolean);
   if (!dates.length) return;
-  const today = new Date(Math.max(...dates.map(d => d.getTime())));
+  const todayRaw = new Date(Math.max(...dates.map(d => d.getTime())));
+  const today = new Date(todayRaw.getFullYear(), todayRaw.getMonth(), todayRaw.getDate(), 23, 59, 59);
   const mtdS = new Date(today.getFullYear(), today.getMonth(), 1);
   const lmS = new Date(today.getFullYear(), today.getMonth() - 1, 1);
   const lmE = new Date(today.getFullYear(), today.getMonth(), 0);
   const lmtdE = new Date(lmS.getFullYear(), lmS.getMonth(), today.getDate());
 
-  const inR = (val, s, e) => { const d = parseD(val); return d && d >= s && d <= e; };
+  const midnight = d => { const x = new Date(d); x.setHours(0,0,0,0); return x; };
+  const inR = (val, s, e) => {
+    const d = parseD(val);
+    if (!d) return false;
+    const dn = midnight(d), sn = midnight(s), en = midnight(e);
+    return dn >= sn && dn <= en;
+  };
   const mtdL = misData.filter(r => inR(r['LEAD_CREATION_DATE'], mtdS, today));
   const lmtdL = misData.filter(r => inR(r['LEAD_CREATION_DATE'], lmS, lmtdE));
   const lmL = misData.filter(r => inR(r['LEAD_CREATION_DATE'], lmS, lmE));
